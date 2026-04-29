@@ -1,0 +1,32 @@
+# Environment files — NEVER commit these
+nova/backend/.env
+nova/frontend/.env
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+nova/backend/venv/
+nova/backend/.venv/
+nova/backend/*.db
+nova/backend/nova.db
+
+# Node
+nova/frontend/node_modules/
+nova/frontend/dist/
+nova/frontend/.vite/
+
+# Kiro
+.kiro/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+nova/backend/backend_log.txt
+nova/backend/startup_err.log
