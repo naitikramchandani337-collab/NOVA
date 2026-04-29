@@ -46,20 +46,10 @@ export async function* streamAstraChat(
         message:         params.message,
         mode:            params.mode ?? 'explain',
         phase:           params.phase ?? 1,
-        lesson:          params.lesson ?? '',
-        user_id:         'anonymous',
         history:         params.history.map((m) => ({
-          role:    m.role,
+          role:    m.role === 'assistant' ? 'assistant' : 'user',
           content: m.content,
         })),
-        context: params.context
-          ? {
-              quiz_attempts:   params.context.quiz_attempts   ?? 0,
-              time_on_section: params.context.time_on_section ?? 0,
-              replays:         params.context.replays         ?? 0,
-              weak_topics:     params.context.weak_topics     ?? [],
-            }
-          : null,
         failed_attempts: params.failed_attempts ?? 0,
       },
       { timeout: 30000 }
@@ -67,8 +57,7 @@ export async function* streamAstraChat(
 
     const text: string =
       response.data?.message ||
-      response.data?.response ||
-      'Ready for your next question, Commander 🚀';
+      'Ready for your next question, Commander';
 
     // Simulate streaming word by word
     const words = text.split(' ');
@@ -79,7 +68,11 @@ export async function* streamAstraChat(
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (!error.response) {
-        yield 'Backend offline. Start with: uvicorn app.main:app --reload 🛰️';
+        yield 'ASTRA offline. Check backend connection';
+        return;
+      }
+      if (error.response.status === 404) {
+        yield 'Endpoint not found. Check your API URL';
         return;
       }
       if (error.response.status === 422) {
@@ -87,14 +80,10 @@ export async function* streamAstraChat(
         yield 'Request format error. Check console for details.';
         return;
       }
-      if (error.response.status === 403) {
-        yield 'Authentication required. Please log in, Commander 🚀';
-        return;
-      }
-      yield `Systems error ${error.response.status}. Adjusting course 🛰️`;
+      yield `Systems error ${error.response.status}. Adjusting course`;
       return;
     }
-    yield 'Unknown anomaly. Please try again, Commander 🚀';
+    yield 'Unknown anomaly. Please try again, Commander';
   }
 }
 
