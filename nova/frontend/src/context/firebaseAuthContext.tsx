@@ -3,15 +3,16 @@ import {
   auth, onAuthChange, signUpWithEmail, signInWithEmail,
   signInWithGoogle, logOut, type User,
 } from '../lib/firebase';
+import { createUserProfile } from '../lib/firestoreService';
 
 interface FirebaseAuthContextType {
-  user:          User | null;
-  loading:       boolean;
+  user:            User | null;
+  loading:         boolean;
   isAuthenticated: boolean;
-  signUp:        (email: string, password: string, displayName: string) => Promise<void>;
-  signIn:        (email: string, password: string) => Promise<void>;
-  signInGoogle:  () => Promise<void>;
-  logout:        () => Promise<void>;
+  signUp:          (email: string, password: string, displayName: string) => Promise<void>;
+  signIn:          (email: string, password: string) => Promise<void>;
+  signInGoogle:    () => Promise<void>;
+  logout:          () => Promise<void>;
 }
 
 const FirebaseAuthCtx = createContext<FirebaseAuthContextType | null>(null);
@@ -21,12 +22,18 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthChange((u) => {
+    const unsub = onAuthChange(async (u) => {
       setUser(u);
       setLoading(false);
-      // Store token for backend calls
       if (u) {
+        // Store token for backend ASTRA calls
         u.getIdToken().then(token => localStorage.setItem('token', token));
+        // Ensure Firestore profile exists
+        await createUserProfile(u.uid, {
+          displayName: u.displayName || u.email?.split('@')[0] || 'Commander',
+          email:       u.email || '',
+          photoURL:    u.photoURL || '',
+        });
       } else {
         localStorage.removeItem('token');
       }

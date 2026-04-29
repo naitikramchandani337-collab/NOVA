@@ -9,6 +9,11 @@ import {
   celebrateProgress
 } from '../../lib/astraClient'
 
+// ── Emotion type — exported for AstraAvatar ───────────────
+export type AstraEmotion =
+  | 'idle' | 'thinking' | 'happy' | 'alert'
+  | 'error' | 'celebrating' | 'explaining' | 'focused';
+
 interface AstraContextType {
   // Core State
   isOpen: boolean

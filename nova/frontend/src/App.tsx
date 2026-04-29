@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from '
 import { useEffect, Suspense } from 'react';
 import { useProgressStore } from '@/store/progressStore';
 import { FirebaseAuthProvider, useFirebaseAuth } from '@/context/firebaseAuthContext';
-
 import SpaceBackground from '@/components/space/SpaceBackground';
 import XPBar from '@/components/ui/XPBar';
 import Header from '@/components/Navigation/Header';
@@ -67,11 +66,15 @@ function AppRoutes() {
 }
 
 function AppInner() {
-  const updateStreak = useProgressStore(state => state.updateStreak);
+  const { user } = useFirebaseAuth();
+  const { loadFromFirestore, updateStreak } = useProgressStore();
 
   useEffect(() => {
-    updateStreak();
-  }, []);
+    if (user) {
+      loadFromFirestore(user.uid);
+      updateStreak();
+    }
+  }, [user?.uid]);
 
   return (
     <div className="min-h-screen bg-space-black text-white font-space">

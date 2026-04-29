@@ -1,288 +1,142 @@
-import { AnimatePresence, motion } from 'framer-motion'
-import { useAstra } from './AstraContext'
-import AstraChatPanel from './AstraChatPanel'
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAstra, type AstraEmotion } from './AstraContext';
+import AstraChatPanel from './AstraChatPanel';
 
-function AstraRobot({
-  isLoading,
-  isOnline,
-  confusionLevel,
-}: {
-  isLoading: boolean
-  isOnline: boolean
-  confusionLevel: 'low' | 'medium' | 'high'
-}) {
-  const eyeColor =
-    !isOnline                   ? '#ef4444' :
-    isLoading                   ? '#c084fc' :
-    confusionLevel === 'high'   ? '#fb923c' :
-    confusionLevel === 'medium' ? '#fbbf24' :
-                                  '#22d3ee'
+// ── Emotion color map ─────────────────────────────────────
+const EMOTION_COLORS: Record<AstraEmotion, { core: string; glow: string; ring: string }> = {
+  idle:        { core: '#2563eb', glow: 'rgba(37,99,235,0.4)',   ring: 'rgba(37,99,235,0.15)'  },
+  thinking:    { core: '#7c3aed', glow: 'rgba(124,58,237,0.5)',  ring: 'rgba(124,58,237,0.15)' },
+  happy:       { core: '#0ea5e9', glow: 'rgba(14,165,233,0.5)',  ring: 'rgba(14,165,233,0.15)' },
+  alert:       { core: '#d97706', glow: 'rgba(217,119,6,0.5)',   ring: 'rgba(217,119,6,0.15)'  },
+  error:       { core: '#dc2626', glow: 'rgba(220,38,38,0.5)',   ring: 'rgba(220,38,38,0.15)'  },
+  celebrating: { core: '#0ea5e9', glow: 'rgba(14,165,233,0.6)',  ring: 'rgba(14,165,233,0.2)'  },
+  explaining:  { core: '#1d4ed8', glow: 'rgba(29,78,216,0.45)',  ring: 'rgba(29,78,216,0.15)'  },
+  focused:     { core: '#1e40af', glow: 'rgba(30,64,175,0.4)',   ring: 'rgba(30,64,175,0.12)'  },
+};
 
-  const bodyColor   = '#e8edf8'
-  const shadowColor = '#b8c4e0'
-  const darkColor   = '#1e293b'
-
-  return (
-    <svg width="120" height="200" viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="rg_body2" cx="35%" cy="25%">
-          <stop offset="0%"   stopColor="#f4f7ff" />
-          <stop offset="100%" stopColor="#c8d4ee" />
-        </radialGradient>
-        <radialGradient id="rg_ear2" cx="30%" cy="20%">
-          <stop offset="0%"   stopColor="#eef2ff" />
-          <stop offset="100%" stopColor="#b8c4e0" />
-        </radialGradient>
-        <radialGradient id="rg_inner_ear2" cx="40%" cy="30%">
-          <stop offset="0%"   stopColor="#fda4af" />
-          <stop offset="100%" stopColor="#fb7185" />
-        </radialGradient>
-        <filter id="av_glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="av_shadow">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#6366f1" floodOpacity="0.2"/>
-        </filter>
-      </defs>
-
-      {/* LEFT EAR */}
-      <motion.g
-        animate={{ rotate: [-3, 3, -3] }}
-        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-        style={{ transformOrigin: '35px 52px' }}
-      >
-        <path d="M 28 52 C 18 40 12 20 16 4 C 18 -4 28 -2 32 6 C 36 16 38 36 38 52 Z"
-          fill="url(#rg_ear2)" stroke={shadowColor} strokeWidth="1" />
-        <path d="M 29 50 C 22 40 18 22 21 8 C 22 3 28 4 30 9 C 33 18 34 36 34 50 Z"
-          fill="url(#rg_inner_ear2)" opacity="0.7" />
-        {/* Thruster tip */}
-        <motion.circle cx="22" cy="4" r="5" fill="#f97316" filter="url(#av_glow)"
-          animate={{ r: [5, 6.5, 5], opacity: [0.8, 1, 0.8] }}
-          transition={{ repeat: Infinity, duration: 1.5 }} />
-      </motion.g>
-
-      {/* RIGHT EAR */}
-      <motion.g
-        animate={{ rotate: [3, -3, 3] }}
-        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut', delay: 0.4 }}
-        style={{ transformOrigin: '85px 52px' }}
-      >
-        <path d="M 92 52 C 102 40 108 20 104 4 C 102 -4 92 -2 88 6 C 84 16 82 36 82 52 Z"
-          fill="url(#rg_ear2)" stroke={shadowColor} strokeWidth="1" />
-        <path d="M 91 50 C 98 40 102 22 99 8 C 98 3 92 4 90 9 C 87 18 86 36 86 50 Z"
-          fill="url(#rg_inner_ear2)" opacity="0.7" />
-        {/* Thruster tip */}
-        <motion.circle cx="98" cy="4" r="5" fill="#f97316" filter="url(#av_glow)"
-          animate={{ r: [5, 6.5, 5], opacity: [0.8, 1, 0.8] }}
-          transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }} />
-      </motion.g>
-
-      {/* HEAD */}
-      <ellipse cx="60" cy="68" rx="34" ry="32"
-        fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" filter="url(#av_shadow)" />
-      <path d="M 30 60 Q 60 52 90 60" stroke={shadowColor} strokeWidth="1" fill="none" opacity="0.5" />
-
-      {/* VISOR */}
-      <ellipse cx="60" cy="70" rx="26" ry="22" fill={darkColor} opacity="0.92" />
-      <ellipse cx="52" cy="58" rx="12" ry="5" fill="white" opacity="0.06" />
-
-      {/* LEFT EYE */}
-      <ellipse cx="47" cy="68" rx="10" ry="10" fill="#0f172a" />
-      <motion.ellipse cx="47" cy="68" rx="7.5" ry="7.5" fill={eyeColor} filter="url(#av_glow)"
-        animate={{ rx: [7.5, 8.5, 7.5], ry: [7.5, 8.5, 7.5] }}
-        transition={{ repeat: Infinity, duration: 2 }} />
-      <ellipse cx="47" cy="68" rx="4" ry="4" fill="#020617" />
-      <ellipse cx="44" cy="65" rx="2" ry="2" fill="white" opacity="0.95" />
-      <motion.ellipse cx="47" cy="68" rx="10" ry="0" fill={darkColor}
-        animate={{ ry: [0, 0, 0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 5, times: [0, 0.75, 0.82, 0.88, 1] }} />
-
-      {/* RIGHT EYE */}
-      <ellipse cx="73" cy="68" rx="10" ry="10" fill="#0f172a" />
-      <motion.ellipse cx="73" cy="68" rx="7.5" ry="7.5" fill={eyeColor} filter="url(#av_glow)"
-        animate={{ rx: [7.5, 8.5, 7.5], ry: [7.5, 8.5, 7.5] }}
-        transition={{ repeat: Infinity, duration: 2, delay: 0.3 }} />
-      <ellipse cx="73" cy="68" rx="4" ry="4" fill="#020617" />
-      <ellipse cx="70" cy="65" rx="2" ry="2" fill="white" opacity="0.95" />
-      <motion.ellipse cx="73" cy="68" rx="10" ry="0" fill={darkColor}
-        animate={{ ry: [0, 0, 0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 5, delay: 0.15, times: [0, 0.75, 0.82, 0.88, 1] }} />
-
-      {/* MOUTH */}
-      <motion.path stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" fill="none"
-        animate={{ d: isLoading ? 'M 52 82 Q 60 82 68 82' : 'M 52 81 Q 60 88 68 81' }}
-        transition={{ duration: 0.4 }} />
-      <ellipse cx="34" cy="76" rx="7" ry="4" fill="#fda4af" opacity="0.25" />
-      <ellipse cx="86" cy="76" rx="7" ry="4" fill="#fda4af" opacity="0.25" />
-
-      {/* NECK */}
-      <rect x="48" y="98" width="24" height="9" rx="4" fill={bodyColor} stroke={shadowColor} strokeWidth="1" />
-      <rect x="51" y="100" width="18" height="2.5" rx="1" fill={shadowColor} opacity="0.5" />
-      <rect x="51" y="103" width="18" height="2.5" rx="1" fill={shadowColor} opacity="0.5" />
-
-      {/* BODY */}
-      <rect x="20" y="105" width="80" height="58" rx="22"
-        fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" filter="url(#av_shadow)" />
-
-      {/* CHEST PANEL */}
-      <rect x="32" y="114" width="56" height="36" rx="9" fill={darkColor} stroke={eyeColor} strokeWidth="1" opacity="0.9" />
-      <rect x="35" y="117" width="50" height="20" rx="5" fill="#020617" />
-      <motion.path stroke={eyeColor} strokeWidth="1.5" fill="none" strokeLinecap="round"
-        animate={{ d: [
-          'M 38 127 Q 44 120 50 127 Q 56 134 62 127 Q 68 120 74 127 Q 80 134 82 127',
-          'M 38 127 Q 44 134 50 127 Q 56 120 62 127 Q 68 134 74 127 Q 80 120 82 127',
-          'M 38 127 Q 44 120 50 127 Q 56 134 62 127 Q 68 120 74 127 Q 80 134 82 127',
-        ]}}
-        transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }} />
-      <motion.circle cx="40" cy="143" r="3.5" fill="#22c55e"
-        animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.1 }} />
-      <motion.circle cx="52" cy="143" r="3.5" fill={eyeColor}
-        animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.37 }} />
-      <motion.circle cx="64" cy="143" r="3.5" fill="#a78bfa"
-        animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.74 }} />
-
-      {/* LEFT ARM */}
-      <motion.g
-        animate={{ rotate: isLoading ? [-12, 12, -12] : [-6, 6, -6] }}
-        transition={{ repeat: Infinity, duration: isLoading ? 0.5 : 2.5, ease: 'easeInOut' }}
-        style={{ transformOrigin: '20px 118px' }}
-      >
-        <rect x="4" y="112" width="18" height="30" rx="9" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" />
-        <ellipse cx="13" cy="146" rx="10" ry="8" fill={bodyColor} stroke={shadowColor} strokeWidth="1.5" />
-        <rect x="6"  y="142" width="5" height="9"  rx="2.5" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-        <rect x="12" y="140" width="5" height="11" rx="2.5" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-        <rect x="18" y="142" width="4" height="9"  rx="2"   fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-      </motion.g>
-
-      {/* RIGHT ARM */}
-      <motion.g
-        animate={{ rotate: isLoading ? [12, -12, 12] : [6, -6, 6] }}
-        transition={{ repeat: Infinity, duration: isLoading ? 0.5 : 2.5, ease: 'easeInOut', delay: 0.2 }}
-        style={{ transformOrigin: '100px 118px' }}
-      >
-        <rect x="98" y="112" width="18" height="30" rx="9" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" />
-        <ellipse cx="107" cy="146" rx="10" ry="8" fill={bodyColor} stroke={shadowColor} strokeWidth="1.5" />
-        <rect x="98"  y="142" width="4" height="9"  rx="2"   fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-        <rect x="103" y="140" width="5" height="11" rx="2.5" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-        <rect x="109" y="142" width="5" height="9"  rx="2.5" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1" />
-      </motion.g>
-
-      {/* LEGS */}
-      <rect x="30" y="160" width="24" height="20" rx="9" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" />
-      <rect x="66" y="160" width="24" height="20" rx="9" fill="url(#rg_body2)" stroke={shadowColor} strokeWidth="1.5" />
-
-      {/* BOOTS */}
-      <rect x="25" y="175" width="30" height="13" rx="7" fill={bodyColor} stroke={shadowColor} strokeWidth="1.5" />
-      <rect x="65" y="175" width="30" height="13" rx="7" fill={bodyColor} stroke={shadowColor} strokeWidth="1.5" />
-
-      {/* TAIL */}
-      <motion.path stroke={bodyColor} strokeWidth="9" strokeLinecap="round" fill="none"
-        animate={{ d: [
-          'M 96 148 Q 116 155 112 170 Q 108 182 96 178',
-          'M 96 148 Q 118 153 115 168 Q 112 180 100 176',
-          'M 96 148 Q 116 155 112 170 Q 108 182 96 178',
-        ]}}
-        transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }} />
-      <motion.ellipse cx="96" cy="178" rx="6" ry="6" fill={eyeColor} filter="url(#av_glow)"
-        animate={{ cx: [96, 100, 96], cy: [178, 176, 178], opacity: [0.8, 1, 0.8] }}
-        transition={{ repeat: Infinity, duration: 2.5 }} />
-
-      {/* SHOULDER DOTS */}
-      <motion.circle cx="26" cy="116" r="4" fill={eyeColor} opacity="0.7" filter="url(#av_glow)"
-        animate={{ opacity: [0.5, 0.9, 0.5] }} transition={{ repeat: Infinity, duration: 2 }} />
-      <motion.circle cx="94" cy="116" r="4" fill={eyeColor} opacity="0.7" filter="url(#av_glow)"
-        animate={{ opacity: [0.9, 0.5, 0.9] }} transition={{ repeat: Infinity, duration: 2 }} />
-    </svg>
-  )
+// ── Sphere component ──────────────────────────────────────
+interface SphereProps {
+  emotion: AstraEmotion;
+  onClick: () => void;
+  isOpen: boolean;
 }
 
+function AstraSphere({ emotion, onClick, isOpen }: SphereProps) {
+  const colors = EMOTION_COLORS[emotion] ?? EMOTION_COLORS.idle;
+
+  return (
+    <motion.div
+      onClick={onClick}
+      className="relative cursor-pointer select-none flex items-center justify-center"
+      style={{ width: '72px', height: '72px' }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.92 }}
+    >
+      {/* Outer pulse ring */}
+      <motion.div className="absolute rounded-full"
+        style={{ width: '72px', height: '72px', border: `1.5px solid ${colors.core}`, opacity: 0.4 }}
+        animate={{ scale: [1, 1.35, 1], opacity: [0.4, 0, 0.4] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
+      />
+
+      {/* Second pulse ring */}
+      <motion.div className="absolute rounded-full"
+        style={{ width: '72px', height: '72px', border: `1px solid ${colors.core}`, opacity: 0.25 }}
+        animate={{ scale: [1, 1.6, 1], opacity: [0.25, 0, 0.25] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut', delay: 0.6 }}
+      />
+
+      {/* Glow halo */}
+      <motion.div className="absolute rounded-full"
+        style={{ width: '64px', height: '64px', background: colors.ring, filter: 'blur(12px)' }}
+        animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.1, 1] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* Main sphere */}
+      <AnimatePresence mode="wait">
+        <motion.div key={emotion} className="absolute rounded-full"
+          style={{
+            width: '48px', height: '48px',
+            background: `radial-gradient(circle at 35% 35%, white 0%, ${colors.core} 50%, #0f172a 100%)`,
+            boxShadow: `0 0 16px ${colors.glow}, 0 0 32px ${colors.glow}, 0 0 48px ${colors.ring}, inset 0 2px 8px rgba(255,255,255,0.3)`,
+          }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ duration: 0.25 }}
+        />
+      </AnimatePresence>
+
+      {/* Inner shine */}
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width: '16px', height: '12px', top: '14px', left: '19px', background: 'radial-gradient(circle,rgba(255,255,255,0.7),transparent)' }}
+      />
+
+      {/* Thinking spinner */}
+      {emotion === 'thinking' && (
+        <motion.div className="absolute rounded-full pointer-events-none"
+          style={{ width: '56px', height: '56px', border: '1.5px solid transparent', borderTopColor: colors.core, borderRightColor: colors.core }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
+      )}
+
+      {/* Celebrating particles */}
+      {emotion === 'celebrating' && (
+        <>
+          {[0, 60, 120, 180, 240, 300].map((deg, i) => (
+            <motion.div key={i} className="absolute rounded-full pointer-events-none"
+              style={{ width: '5px', height: '5px', background: colors.core, boxShadow: `0 0 6px ${colors.glow}` }}
+              animate={{
+                x: [0, Math.cos((deg * Math.PI) / 180) * 28, Math.cos((deg * Math.PI) / 180) * 36],
+                y: [0, Math.sin((deg * Math.PI) / 180) * 28, Math.sin((deg * Math.PI) / 180) * 36],
+                opacity: [1, 0.8, 0], scale: [1, 1, 0],
+              }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.1, ease: 'easeOut' }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Online indicator dot */}
+      <motion.div className="absolute rounded-full"
+        style={{ width: '10px', height: '10px', bottom: '2px', right: '2px', background: isOpen ? colors.core : '#1e40af', border: '2px solid #030712', boxShadow: `0 0 6px ${colors.glow}` }}
+        animate={{ opacity: [1, 0.5, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
+    </motion.div>
+  );
+}
+
+// ── Main export ───────────────────────────────────────────
 export default function AstraAvatar() {
-  const { isOpen, isOnline, isLoading, toggleOpen, confusionLevel, currentPhase } = useAstra()
+  const { isOpen, isLoading, confusionLevel, toggleOpen } = useAstra();
 
-  const accentColor =
-    !isOnline                   ? '#ef4444' :
-    isLoading                   ? '#c084fc' :
-    confusionLevel === 'high'   ? '#fb923c' :
-    confusionLevel === 'medium' ? '#fbbf24' :
-                                  '#22d3ee'
-
-  const statusText =
-    !isOnline                   ? 'Offline'        :
-    isLoading                   ? 'Thinking... 💭' :
-    confusionLevel === 'high'   ? 'Here to help 🚨':
-    confusionLevel === 'medium' ? 'Analyzing ⚠️'   :
-                                  'ASTRA ✨'
+  const emotion: AstraEmotion =
+    isLoading                   ? 'thinking'   :
+    confusionLevel === 'high'   ? 'alert'      :
+    confusionLevel === 'medium' ? 'explaining' :
+    isOpen                      ? 'explaining' :
+                                  'idle';
 
   return (
     <>
-      <motion.div
-        className="fixed bottom-4 right-5 z-[9999] flex flex-col items-center select-none"
-        initial={{ scale: 0, opacity: 0, y: 60 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ type: 'spring', damping: 14, stiffness: 220, delay: 0.6 }}
-      >
-        {/* Tooltip */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          whileHover={{ opacity: 1, y: 0 }}
-          className="mb-1 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-white/10 text-[10px] text-white/70 whitespace-nowrap pointer-events-none"
-        >
-          {currentPhase ? `Phase ${currentPhase} · AI Mentor` : 'Click to chat with ASTRA'}
-        </motion.div>
-
-        <div className="relative">
-          {/* Ambient glow */}
-          <motion.div
-            className="absolute inset-0 rounded-full blur-3xl pointer-events-none"
-            style={{
-              background: `radial-gradient(circle at 50% 60%, ${accentColor}40, transparent 70%)`,
-              width: 120, height: 200,
-            }}
-            animate={{ opacity: [0.4, 0.7, 0.4] }}
-            transition={{ repeat: Infinity, duration: 2.5 }}
-          />
-
-          {/* Robot */}
-          <motion.div
-            onClick={toggleOpen}
-            className="cursor-pointer relative z-10"
-            animate={{ y: [-6, 6, -6] }}
-            transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
-            whileHover={{ scale: 1.07 }}
-            whileTap={{ scale: 0.93 }}
-          >
-            <AstraRobot isLoading={isLoading} isOnline={isOnline} confusionLevel={confusionLevel} />
-          </motion.div>
-        </div>
-
-        {/* Name tag */}
-        <motion.div
-          className="mt-0 px-3 py-0.5 rounded-full border text-[10px] font-bold tracking-widest backdrop-blur-sm"
-          style={{
-            borderColor: `${accentColor}40`,
-            backgroundColor: `${accentColor}12`,
-            color: accentColor,
-          }}
-          animate={{ opacity: [0.7, 1, 0.7] }}
-          transition={{ repeat: Infinity, duration: 2.5 }}
-        >
-          {statusText}
-        </motion.div>
-
-        <div className="flex items-center gap-1.5 mt-1">
-          <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-          <span className="text-[9px] text-gray-500">{isOnline ? 'Online' : 'Offline'}</span>
-        </div>
-      </motion.div>
-
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed bottom-56 right-6 z-[9998]">
+          <div className="fixed bottom-28 right-6 z-[9998]">
             <AstraChatPanel />
           </div>
         )}
       </AnimatePresence>
+
+      <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center gap-1.5">
+        <AstraSphere emotion={emotion} onClick={toggleOpen} isOpen={isOpen} />
+        <div className="text-[9px] font-bold tracking-widest uppercase"
+          style={{ color: EMOTION_COLORS[emotion].core, textShadow: `0 0 8px ${EMOTION_COLORS[emotion].glow}` }}>
+          ASTRA
+        </div>
+      </div>
     </>
-  )
+  );
 }
