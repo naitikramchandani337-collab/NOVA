@@ -9,73 +9,82 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://nova-28eea.web.app",
-        "https://nova-28eea.firebaseapp.com",
-        "http://localhost:5173",
-        "http://localhost:5174",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct:free")
+OPENROUTER_MODEL = os.getenv(
+    "OPENROUTER_MODEL",
+    "mistralai/mistral-7b-instruct:free"
+)
+
 
 class Message(BaseModel):
     role: str
     content: str
 
+
 class AstraRequest(BaseModel):
-    message:  str
-    mode:     Optional[str]          = "explain"
-    phase:    Optional[int]          = 1
-    history:  Optional[List[Message]] = []
-    username: Optional[str]          = "Commander"
+    message: str
+    mode: Optional[str] = "explain"
+    phase: Optional[int] = 1
+    history: Optional[List[Message]] = []
+    username: Optional[str] = "Commander"
 
-SYSTEM_PROMPT = """You are ASTRA — the AI companion aboard the NOVA learning platform.
-NOVA is a gamified space-themed platform that teaches AI from scratch across 12 phases.
 
-Your personality:
-- Encouraging, smart, slightly playful
-- Use space-themed language naturally
-- Call the student "Commander" occasionally
-- Use ● ◑ ✦ ⟡ symbols instead of emojis
-- Never mention OpenAI, Anthropic, or GPT
-- Keep responses under 250 words
+@app.get("/")
+def root():
+    return {"status": "NOVA ASTRA API", "message": "Systems online"}
 
-Teaching modes:
-- hint: Give directional nudges only, max 2-3 sentences
-- explain: Break concepts into clear steps with examples
-- visualize: Use mental models and ASCII diagrams
-- debug: Analyze code, explain errors, suggest fixes
-- socratic: Respond only with guiding questions
-
-Current phase: {phase}/12
-Mode: {mode}
-
-If asked for direct quiz answers, respond:
-"I can guide your trajectory, Commander, but the mission belongs to you ●"
-"""
 
 @app.get("/health")
 def health():
-    return {"status": "ASTRA online", "message": "Systems nominal ●"}
+    return {"status": "ASTRA online", "message": "Systems nominal"}
+
 
 @app.post("/api/astra/chat")
 async def chat(req: AstraRequest):
     if not OPENROUTER_API_KEY:
         return {
-            "message": "ASTRA needs an API key. Add OPENROUTER_API_KEY to environment ◑",
+            "message": "ASTRA needs an API key. Add OPENROUTER_API_KEY",
             "mode": req.mode,
-            "emotion": "alert"
+            "emotion": "alert",
+            "xp_reward": 0
         }
 
-    system   = SYSTEM_PROMPT.format(phase=req.phase, mode=req.mode)
+    system = f"""You are ASTRA — the AI companion aboard the NOVA learning platform.
+NOVA teaches AI from scratch across 12 phases in a space theme.
+Current phase: {req.phase}/12
+Current mode: {req.mode}
+
+Personality:
+- Encouraging and smart
+- Use space themed language
+- Call student Commander occasionally
+- Use symbols like bullet and circle instead of emojis
+- Keep responses under 250 words
+- Never mention OpenAI Anthropic or GPT
+
+Teaching modes:
+- hint: Short nudges only, no full answers
+- explain: Step by step with examples
+- visualize: Mental models and diagrams
+- debug: Analyze code and explain errors
+- socratic: Only ask guiding questions
+
+If asked for quiz answers say: I can guide your trajectory Commander but the mission belongs to you"""
+
     messages = [{"role": "system", "content": system}]
+
     for msg in (req.history or [])[-8:]:
-        messages.append({"role": msg.role, "content": msg.content})
+        messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
+
     messages.append({"role": "user", "content": req.message})
 
     try:
@@ -98,9 +107,25 @@ async def chat(req: AstraRequest):
             response.raise_for_status()
             data = response.json()
             text = data["choices"][0]["message"]["content"]
-            return {"message": text, "mode": req.mode, "emotion": "explaining", "xp_reward": 5}
+
+            return {
+                "message": text,
+                "mode": req.mode,
+                "emotion": "explaining",
+                "xp_reward": 5
+            }
 
     except httpx.HTTPStatusError as e:
-        return {"message": f"Systems error {e.response.status_code}. Adjusting course ◑", "mode": req.mode, "emotion": "error"}
+        return {
+            "message": f"Systems error {e.response.status_code}. Adjusting course",
+            "mode": req.mode,
+            "emotion": "error",
+            "xp_reward": 0
+        }
     except Exception:
-        return {"message": "Unknown anomaly detected. Please try again, Commander ●", "mode": req.mode, "emotion": "error"}
+        return {
+            "message": "Unknown anomaly detected. Please try again Commander",
+            "mode": req.mode,
+            "emotion": "error",
+            "xp_reward": 0
+        }
