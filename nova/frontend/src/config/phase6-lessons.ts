@@ -1,7 +1,9 @@
+import { Lesson } from '@/types';
+
 // Phase 6: PyTorch & Deep Learning Framework - Complete Lessons
 // All 6 lessons with theory, code examples, exercises, and quizzes
 
-export const PHASE_6_LESSONS = [
+export const PHASE_6_LESSONS: Lesson[] = [
   {
     id: 'phase6-lesson1',
     phaseId: 6,

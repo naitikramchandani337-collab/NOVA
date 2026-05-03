@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { Phase } from '@types/index';
+import { Phase } from '@/types';
 
 interface SpaceMapProps {
   phases: Phase[];

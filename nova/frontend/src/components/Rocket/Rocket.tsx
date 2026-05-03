@@ -87,7 +87,7 @@ export default function Rocket() {
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-[400px] pointer-events-none z-40 overflow-hidden">
-      <Canvas alpha shadow={{ enabled: true }}>
+      <Canvas gl={{ alpha: true }} shadows>
         <AnimatePresence>
             {!isLaunching && <RocketScene />}
         </AnimatePresence>

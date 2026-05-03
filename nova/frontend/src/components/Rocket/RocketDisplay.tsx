@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { RocketPart, RocketPartType } from '@types/index';
+import { RocketPart, RocketPartType } from '@/types';
 
 interface RocketDisplayProps {
   parts: string[]; // This will now be an array of part IDs from Firestore

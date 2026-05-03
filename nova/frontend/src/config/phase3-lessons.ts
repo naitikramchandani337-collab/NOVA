@@ -1,7 +1,6 @@
-// Phase 3 ML Basics - Complete Lessons
-// This file contains all 5 complete lessons for Phase 3
+import { Lesson } from '@/types';
 
-export const PHASE_3_LESSONS = [
+export const PHASE_3_LESSONS: Lesson[] = [
   {
     id: 'ml-001',
     phaseId: 3,

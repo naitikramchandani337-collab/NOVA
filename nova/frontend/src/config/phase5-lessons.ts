@@ -1,6 +1,6 @@
-// Phase 5: Transformers, BERT, GPT & Large Language Models
+import { Lesson } from '@/types';
 
-export const PHASE_5_LESSONS = [
+export const PHASE_5_LESSONS: Lesson[] = [
   {
     id: 'phase5-lesson1',
     phaseId: 5,

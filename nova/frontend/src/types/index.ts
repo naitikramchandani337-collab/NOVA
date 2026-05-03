@@ -12,6 +12,7 @@ export interface Phase {
   lessons: Lesson[];
   unlockXP: number;
   visualization?: VisualizationType;
+  completed?: boolean;
 }
 
 export interface PracticeExercise {
@@ -29,6 +30,7 @@ export interface QuizQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+  points?: number;
 }
 
 export interface Resource {
@@ -51,6 +53,7 @@ export interface Lesson {
   resources?: Resource[];
   keyTakeaways?: string[];
   realWorldConnections?: string[];
+  project?: boolean;
 }
 
 export type RocketPartType =

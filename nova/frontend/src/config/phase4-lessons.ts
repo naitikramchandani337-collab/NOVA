@@ -1,3 +1,5 @@
+import { Lesson } from '@/types';
+
 // Phase 4: Model Evaluation & Improvement - Complete Lessons
 export const PHASE_4_INFO = {
   id: 4,
@@ -13,7 +15,7 @@ export const PHASE_4_INFO = {
   lessons: 5,
 };
 
-export const PHASE_4_LESSONS = [
+export const PHASE_4_LESSONS: Lesson[] = [
   {
     id: 'eval-001',
     phaseId: 4,

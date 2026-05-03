@@ -8,7 +8,7 @@ interface Track {
   description: string;
   stack: string[];
   color: string;
-  Icon: React.FC<{ className?: string }>;
+  Icon: React.FC<{ className?: string; style?: React.CSSProperties }>;
 }
 
 const TRACKS: Track[] = [
