@@ -85,10 +85,8 @@ Teaching modes:
 If asked for quiz answers say: I can guide your trajectory Commander but the mission belongs to you."""
 
     messages = [{"role": "system", "content": system}]
-
     for msg in (req.history or [])[-8:]:
         messages.append({"role": msg.role, "content": msg.content})
-
     messages.append({"role": "user", "content": req.message})
 
     try:

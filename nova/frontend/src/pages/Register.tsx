@@ -115,6 +115,8 @@ export default function Register() {
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
+                id="name"
+                name="name"
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -127,6 +129,8 @@ export default function Register() {
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
+                id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -139,6 +143,8 @@ export default function Register() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
+                id="password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -151,6 +157,8 @@ export default function Register() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
+                id="confirm"
+                name="confirm"
                 type="password"
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}

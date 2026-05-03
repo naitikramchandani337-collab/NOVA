@@ -43,14 +43,13 @@ export async function* streamAstraChat(
     const response = await axios.post(
       `${BASE_URL}/api/astra/chat`,
       {
-        message:         params.message,
-        mode:            params.mode ?? 'explain',
-        phase:           params.phase ?? 1,
-        history:         params.history.map((m) => ({
+        message: params.message,
+        mode:    params.mode ?? 'explain',
+        phase:   params.phase ?? 1,
+        history: params.history.map((m) => ({
           role:    m.role === 'assistant' ? 'assistant' : 'user',
           content: m.content,
         })),
-        failed_attempts: params.failed_attempts ?? 0,
       },
       { timeout: 30000 }
     );
@@ -72,7 +71,7 @@ export async function* streamAstraChat(
         return;
       }
       if (error.response.status === 404) {
-        yield 'Endpoint not found. Check your API URL';
+        yield 'ASTRA backend not found. Check Render deployment.';
         return;
       }
       if (error.response.status === 422) {

@@ -1,10 +1,10 @@
 import { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Rocket3D } from '../components/rocket/Rocket3D';
-import { LaunchSequence } from '../components/rocket/LaunchSequence';
-import { PartTooltip } from '../components/rocket/PartTooltip';
-import { ROCKET_PARTS, type RocketPart } from '../components/rocket/rocketData';
+import { Rocket3D } from '../components/Rocket/Rocket3D';
+import { LaunchSequence } from '../components/Rocket/LaunchSequence';
+import { PartTooltip } from '../components/Rocket/PartTooltip';
+import { ROCKET_PARTS, type RocketPart } from '../components/Rocket/rocketData';
 import { useRocket } from '../hooks/useRocket';
 import { useAstra } from '../components/Astra/AstraContext';
 

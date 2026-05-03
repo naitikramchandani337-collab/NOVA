@@ -16,8 +16,10 @@ import { db } from './firebase';
 export interface UserProfile {
   uid:          string;
   displayName:  string;
+  username:     string;
   email:        string;
   photoURL:     string;
+  avatar:       string;
   title:        string;
   bio:          string;
   country:      string;
@@ -29,6 +31,7 @@ export interface UserProfile {
 
 export interface UserProgress {
   uid:              string;
+  username:         string;
   totalXP:          number;
   level:            number;
   currentPhase:     number;
@@ -64,6 +67,7 @@ export interface UserSettings {
 
 // ── Default values ────────────────────────────────────────
 const DEFAULT_PROGRESS: Omit<UserProgress, 'uid'> = {
+  username: '',
   totalXP: 0, level: 1, currentPhase: 1,
   completedPhases: [], completedLessons: [],
   streak: 0, lastActiveDate: '', rocketParts: [],
@@ -81,27 +85,60 @@ const DEFAULT_SETTINGS: UserSettings = {
 };
 
 // ── User Profile ──────────────────────────────────────────
-export async function createUserProfile(uid: string, data: Partial<UserProfile>) {
-  const ref = doc(db, 'users', uid);
-  const snap = await getDoc(ref);
+export async function createUserProfile(uid: string, data: { displayName: string; email: string; photoURL?: string }) {
+  const userRef = doc(db, 'users', uid);
+  const snap = await getDoc(userRef);
+  
   if (!snap.exists()) {
-    await setDoc(ref, {
+    const timestamp = serverTimestamp();
+    
+    // 1. Core User Doc (for auth linking)
+    await setDoc(userRef, {
       uid,
-      displayName: data.displayName || 'Commander',
-      email:       data.email || '',
-      photoURL:    data.photoURL || '',
-      title:       'Space Cadet',
-      bio:         '',
-      country:     '',
-      rocketName:  'Nova-1',
-      joinedAt:    serverTimestamp(),
-      lastActive:  serverTimestamp(),
-      isPublic:    true,
+      displayName: data.displayName,
+      email: data.email,
+      photoURL: data.photoURL || '',
+      joinedAt: timestamp,
     });
-    // Create progress doc
-    await setDoc(doc(db, 'progress', uid), { uid, ...DEFAULT_PROGRESS });
-    // Create settings doc
-    await setDoc(doc(db, 'settings', uid), DEFAULT_SETTINGS);
+
+    // 2. Profile Doc
+    await setDoc(doc(db, 'profiles', uid), {
+      username: data.displayName,
+      email: data.email,
+      avatar: 'default',
+      bio: '',
+      isPublic: true,
+      joinedAt: timestamp,
+    });
+
+    // 3. Progress Doc
+    await setDoc(doc(db, 'progress', uid), {
+      uid,
+      username: data.displayName,
+      totalXP: 0,
+      level: 1,
+      streak: 0,
+      currentPhase: 1,
+      completedPhases: [],
+      completedLessons: [],
+      rocketParts: ['body'], // Everyone starts with a body
+      lastActiveDate: new Date().toDateString(),
+    });
+
+    // 4. Settings Doc
+    await setDoc(doc(db, 'settings', uid), {
+      theme: 'dark',
+      notifications: true,
+      language: 'en',
+      astraMode: 'balanced',
+    });
+
+    // 5. Rocket Doc
+    await setDoc(doc(db, 'rocket', uid), {
+      parts: ['body'],
+      color: '#3b82f6',
+      unlockedAt: timestamp,
+    });
   }
 }
 

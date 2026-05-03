@@ -5,12 +5,13 @@ export interface Phase {
   name: string;
   title: string;
   description: string;
-  environment: 'earth' | 'atmosphere' | 'orbit' | 'moon' | 'space' | 'galaxy';
+  environment: 'earth' | 'atmosphere' | 'orbit' | 'moon' | 'space' | 'galaxy' | 'ground' | 'clouds' | 'high_sky' | 'asteroid' | 'planets' | 'star' | 'nebula';
   color: string;
   position: number; // Y position in universe
   rocketPart: RocketPartType;
   lessons: Lesson[];
   unlockXP: number;
+  visualization?: VisualizationType;
 }
 
 export interface PracticeExercise {
@@ -64,7 +65,12 @@ export type RocketPartType =
   | 'ai_consciousness'
   | 'advanced_systems'
   | 'production_engine'
-  | 'launch_systems';
+  | 'launch_systems'
+  | 'navigation_system'
+  | 'consciousness'
+  | 'payload'
+  | 'boosters'
+  | 'full_assembly';
 
 export interface RocketPart {
   id: RocketPartType;
@@ -82,7 +88,25 @@ export type VisualizationType =
   | 'loss_curve'
   | 'attention'
   | 'tensor'
-  | 'cnn_vision';
+  | 'cnn_vision'
+  | 'cnn'
+  | 'sequence'
+  | 'generative'
+  | 'deployment'
+  | 'cnn_architecture'
+  | 'transfer_learning'
+  | 'overfitting_curves'
+  | 'deployment_pipeline'
+  | 'attention_mechanism'
+  | 'bert_architecture'
+  | 'gpt_generation'
+  | 'lora_adaptation'
+  | 'tokenization_pipeline'
+  | 'bias_variance'
+  | 'regularization_effect'
+  | 'confusion_matrix'
+  | 'kfold_split'
+  | 'gradient_descent_3d';
 
 export interface UserProgress {
   userId: string;
@@ -102,6 +126,34 @@ export interface Achievement {
   icon: string;
   unlocked: boolean;
   unlockedAt?: Date;
+}
+
+export interface UserStats {
+  user: {
+    username: string;
+    email: string;
+  };
+  progress: {
+    total_xp: number;
+    current_level: number;
+    streak_days: number;
+  };
+  phases_completed: number;
+  rocket_parts_unlocked: string[];
+}
+
+export interface LeaderboardEntry {
+  username: string;
+  rank: number;
+  total_xp: number;
+  current_level: number;
+  phases_completed: number;
+}
+
+export interface Leaderboard {
+  entries: LeaderboardEntry[];
+  user_rank: number | null;
+  total_users: number;
 }
 
 export type LevelTitle =

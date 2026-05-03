@@ -1,107 +1,90 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { UserStats, Phase, Leaderboard } from '@types/index';
-import api from '@utils/api';
-import { useAuth } from './authContext';
+// src/context/progressContext.tsx
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useProgressStore } from '@/store/progressStore';
+import { useAuthStore } from '@/store/authStore';
+import { UserStats, Leaderboard } from '@/types';
+import { getLeaderboard } from '@/lib/firestoreService';
 
 interface ProgressContextType {
   stats: UserStats | null;
-  phases: Phase[];
   leaderboard: Leaderboard | null;
-  isLoading: boolean;
-  fetchStats: () => Promise<void>;
-  fetchPhases: () => Promise<void>;
-  fetchLeaderboard: () => Promise<void>;
-  completePhase: (phaseId: number, quizScore: number) => Promise<void>;
+  loading: boolean;
+  refreshStats: () => Promise<void>;
+  refreshLeaderboard: () => Promise<void>;
 }
 
-const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
+const ProgressContext = createContext<ProgressContextType | null>(null);
 
 export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token } = useAuth();
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [phases, setPhases] = useState<Phase[]>([]);
+  const { user } = useAuthStore();
+  const progress = useProgressStore();
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const fetchStats = useCallback(async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const response = await api.get<UserStats>('/user/stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setStats(response.data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setIsLoading(false);
+  const refreshStats = async () => {
+    if (user?.uid) {
+      await progress.loadFromFirestore(user.uid);
     }
-  }, [token]);
+  };
 
-  const fetchPhases = useCallback(async () => {
-    if (!token) return;
-    setIsLoading(true);
+  const refreshLeaderboard = async () => {
     try {
-      const response = await api.get<Phase[]>('/phases', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setPhases(response.data);
-    } catch (error) {
-      console.error('Failed to fetch phases:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
+      const entries = await getLeaderboard(50);
+      // Map Firestore entries to LeaderboardEntry type
+      const mappedEntries = entries.map((e: any) => ({
+        username: e.username || 'Unknown',
+        rank: e.rank,
+        total_xp: e.totalXP || 0,
+        current_level: e.level || 1,
+        phases_completed: e.completedPhases?.length || 0,
+      }));
 
-  const fetchLeaderboard = useCallback(async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const response = await api.get<Leaderboard>('/gamification/leaderboard', {
-        headers: { Authorization: `Bearer ${token}` },
+      setLeaderboard({
+        entries: mappedEntries,
+        user_rank: null, // Would need more complex query for actual rank
+        total_users: entries.length,
       });
-      setLeaderboard(response.data);
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [token]);
+  };
 
-  const completePhase = useCallback(
-    async (phaseId: number, quizScore: number) => {
-      if (!token) return;
-      setIsLoading(true);
-      try {
-        await api.post(
-          `/phases/${phaseId}/complete`,
-          { quiz_score: quizScore },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        await fetchStats();
-        await fetchPhases();
-      } catch (error) {
-        console.error('Failed to complete phase:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([refreshStats(), refreshLeaderboard()]);
+      setLoading(false);
+    };
+    if (user) {
+      init();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Map progress store to UserStats interface for compatibility
+  const stats: UserStats | null = user ? {
+    user: {
+      username: user.username,
+      email: user.email,
     },
-    [token, fetchStats, fetchPhases]
-  );
+    progress: {
+      total_xp: progress.totalXP,
+      current_level: progress.level,
+      streak_days: progress.streak,
+    },
+    phases_completed: progress.completedPhases.length,
+    rocket_parts_unlocked: progress.rocketParts,
+  } : null;
 
   return (
-    <ProgressContext.Provider
-      value={{
-        stats,
-        phases,
-        leaderboard,
-        isLoading,
-        fetchStats,
-        fetchPhases,
-        fetchLeaderboard,
-        completePhase,
-      }}
-    >
+    <ProgressContext.Provider value={{
+      stats,
+      leaderboard,
+      loading,
+      refreshStats,
+      refreshLeaderboard,
+    }}>
       {children}
     </ProgressContext.Provider>
   );
@@ -110,7 +93,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useProgress = () => {
   const context = useContext(ProgressContext);
   if (!context) {
-    throw new Error('useProgress must be used within ProgressProvider');
+    throw new Error('useProgress must be used within a ProgressProvider');
   }
   return context;
 };

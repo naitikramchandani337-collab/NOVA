@@ -76,6 +76,16 @@ function AppInner() {
     }
   }, [user?.uid]);
 
+  // Keepalive ping for ASTRA (Render free tier wakes up)
+  useEffect(() => {
+    const ping = () => {
+      import('@/lib/astraClient').then(({ pingAstra }) => pingAstra());
+    };
+    ping();
+    const interval = setInterval(ping, 10 * 60 * 1000); // 10 mins
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-space-black text-white font-space">
       <Suspense fallback={null}>

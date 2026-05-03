@@ -5,18 +5,20 @@ import { Zap } from 'lucide-react';
 
 export default function XPBar() {
   const { totalXP, level, getLevelProgress } = useProgressStore();
-  const [prevXp, setPrevXp] = useState(totalXP);
+  const safeXP = totalXP ?? 0;
+  const safeLevel = level ?? 1;
+  const [prevXp, setPrevXp] = useState(safeXP);
   const [showNotification, setShowNotification] = useState(false);
-  const progress = getLevelProgress();
+  const progress = getLevelProgress() ?? 0;
 
   useEffect(() => {
-    if (totalXP > prevXp) {
+    if (safeXP > prevXp) {
       setShowNotification(true);
       const timer = setTimeout(() => setShowNotification(false), 3000);
-      setPrevXp(totalXP);
+      setPrevXp(safeXP);
       return () => clearTimeout(timer);
     }
-  }, [totalXP, prevXp]);
+  }, [safeXP, prevXp]);
 
   return (
     <>
@@ -26,7 +28,7 @@ export default function XPBar() {
           <div className="w-14 h-14 rounded-2xl bg-zinc-950 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden group">
             <div className="absolute inset-0 bg-blue-600 opacity-10" />
             <span className="text-2xl font-black italic text-white z-10 group-hover:scale-110 transition-transform">
-              L{level}
+              L{safeLevel}
             </span>
           </div>
           <svg className="absolute -inset-1 w-16 h-16 -rotate-90 pointer-events-none">
@@ -44,7 +46,7 @@ export default function XPBar() {
         <div className="hidden md:block">
           <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">XP Earned</div>
           <div className="text-lg font-black text-white italic tracking-tighter">
-            {totalXP.toLocaleString()} <span className="text-zinc-600 text-xs font-bold">TOTAL</span>
+            {safeXP.toLocaleString()} <span className="text-zinc-600 text-xs font-bold">TOTAL</span>
           </div>
         </div>
       </div>
@@ -59,7 +61,7 @@ export default function XPBar() {
             className="fixed top-24 left-8 z-[110] flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-blue-600/40"
           >
             <Zap className="w-4 h-4 fill-white" />
-            Mission Reward +{totalXP - prevXp} XP
+            Mission Reward +{safeXP - prevXp} XP
           </motion.div>
         )}
       </AnimatePresence>

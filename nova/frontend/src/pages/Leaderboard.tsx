@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { progressService, LeaderboardEntry } from '@/services/progressService';
 import { useAuthStore } from '@/store/authStore';
 import { useProgressStore } from '@/store/progressStore';
+import { useProgress } from '@/context/progressContext';
 import { Trophy, Medal, Star, ChevronLeft, Search } from 'lucide-react';
 
 const LEVEL_TITLES = [
@@ -15,28 +15,14 @@ const LEVEL_TITLES = [
 export default function Leaderboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
-  const { xp, level } = useProgressStore();
+  const { totalXP, level } = useProgressStore();
+  const { leaderboard, loading: isLoading } = useProgress();
 
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [userRank, setUserRank] = useState<number | null>(null);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setIsLoading(false);
-      return;
-    }
-
-    progressService.getLeaderboard()
-      .then((data) => {
-        setEntries(data.entries);
-        setUserRank(data.user_rank);
-        setTotalUsers(data.total_users);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, [isAuthenticated]);
+  const filteredEntries = leaderboard?.entries.filter(e => 
+    e.username.toLowerCase().includes(search.toLowerCase())
+  ) || [];
 
   return (
     <div className="min-h-screen bg-black text-white pt-32 pb-20 px-6 overflow-hidden relative">
@@ -60,13 +46,15 @@ export default function Leaderboard() {
                     Hall of <span className="text-blue-500">Engineers</span>
                 </h1>
                 <p className="text-zinc-500 font-medium">
-                    The top {totalUsers} explorers building the future of the galaxy.
+                    The top {leaderboard?.total_users || 0} explorers building the future of the galaxy.
                 </p>
             </div>
             <div className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl">
                 <Search className="w-4 h-4 text-zinc-500" />
                 <input 
                     placeholder="Search pilots..." 
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
                     className="bg-transparent border-none outline-none text-sm font-bold placeholder:text-zinc-700 w-32"
                 />
             </div>
@@ -94,11 +82,11 @@ export default function Leaderboard() {
             <div className="flex gap-12 relative z-10 text-center md:text-right">
                 <div>
                   <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total XP</div>
-                  <div className="text-3xl font-black italic text-white">{xp.toLocaleString()}</div>
+                  <div className="text-3xl font-black italic text-white">{totalXP.toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Global Pos</div>
-                  <div className="text-3xl font-black italic text-blue-500">#{userRank ?? '???'}</div>
+                  <div className="text-3xl font-black italic text-blue-500">#{leaderboard?.user_rank ?? '???'}</div>
                 </div>
             </div>
           </motion.div>
@@ -111,7 +99,7 @@ export default function Leaderboard() {
               [1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse border border-white/5" />
               ))
-            ) : entries.length === 0 ? (
+            ) : filteredEntries.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -126,9 +114,9 @@ export default function Leaderboard() {
                 </p>
               </motion.div>
             ) : (
-              entries.map((entry, i) => (
+              filteredEntries.map((entry, i) => (
                 <motion.div
-                  key={entry.rank}
+                  key={entry.username}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}

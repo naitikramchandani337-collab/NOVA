@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { RocketState } from '../components/rocket/rocketData';
+import type { RocketState } from '../components/Rocket/rocketData';
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 

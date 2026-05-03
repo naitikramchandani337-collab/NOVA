@@ -89,9 +89,9 @@ export default function Phase() {
   const isLastLesson = currentLessonIndex === phase.lessons.length - 1;
 
   const handleNextLesson = async () => {
-    if (currentLesson) completeLesson(currentLesson.id);
+    if (currentLesson) completeLesson(currentLesson.id, currentLesson.xpReward);
     if (isLastLesson) {
-       completePhase(phase.id);
+       completePhase(phase.id, phase.rocketPart);
        unlockPart(phase.rocketPart);
        setPhaseComplete(true);
        setTimeout(() => navigate('/universe'), 3000);

@@ -9,17 +9,17 @@ import {
 } from 'lucide-react';
 import { useProgressStore } from '@/store/progressStore';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/services/api';
+import { getUserProfile, updateUserProfile, UserProfile } from '@/lib/firestoreService';
 
 const LEVEL_TITLES = [
-  'Space Cadet', 'Algorithm Apprentice', 'Neural Navigator',
+  'Data Cadet', 'Algorithm Apprentice', 'Neural Navigator',
   'Gradient Warrior', 'Transformer Mage', 'Model Architect',
   'AI Engineer', 'Deep Mind', 'Research Phantom', 'AI Overlord',
 ];
 
 const AVATAR_COLORS = [
-  '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981',
-  '#ef4444', '#ec4899', '#3b82f6', '#f97316',
+  '#3b82f6', '#8b5cf6', '#f59e0b', '#10b981',
+  '#ef4444', '#ec4899', '#06b6d4', '#f97316',
 ];
 
 export default function Profile() {
@@ -28,240 +28,215 @@ export default function Profile() {
   const { user }  = useAuthStore();
 
   const [editing,     setEditing]     = useState(false);
-  const [avatarColor, setAvatarColor] = useState('#06b6d4');
-  const [displayName, setDisplayName] = useState(user?.username || 'Commander');
-  const [bio,         setBio]         = useState('');
-  const [country,     setCountry]     = useState('');
-  const [rocketName,  setRocketName]  = useState('Nova-1');
+  const [profile,     setProfile]     = useState<any>(null);
   const [saving,      setSaving]      = useState(false);
+  
+  // Local edit state
+  const [editName,    setEditName]    = useState('');
+  const [editBio,     setEditBio]     = useState('');
+  const [editAvatar,  setEditAvatar]  = useState('');
+
+  useEffect(() => {
+    if (user?.uid) {
+      getUserProfile(user.uid).then(p => {
+        setProfile(p);
+        setEditName(p?.username || user.username);
+        setEditBio(p?.bio || '');
+        setEditAvatar(p?.avatar || 'default');
+      });
+    }
+  }, [user]);
 
   const levelTitle   = LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];
   const levelProgress = getLevelProgress();
 
   const stats = [
-    { label: 'Total XP',       value: totalXP.toLocaleString(), Icon: Zap,         color: 'text-yellow-400' },
-    { label: 'Level',          value: level,                     Icon: Star,        color: 'text-cyan-400'   },
-    { label: 'Streak',         value: `${streak}d`,              Icon: Flame,       color: 'text-orange-400' },
-    { label: 'Phases Done',    value: completedPhases.length,    Icon: Rocket,      color: 'text-purple-400' },
-    { label: 'Lessons',        value: '—',                       Icon: BookOpen,    color: 'text-green-400'  },
-    { label: 'Code Runs',      value: '—',                       Icon: Code2,       color: 'text-blue-400'   },
-    { label: 'ASTRA Chats',    value: '—',                       Icon: MessageSquare, color: 'text-pink-400' },
-    { label: 'Achievements',   value: '—',                       Icon: Trophy,      color: 'text-amber-400'  },
+    { label: 'Total XP',       value: totalXP.toLocaleString(), Icon: Zap,         color: 'text-blue-500' },
+    { label: 'Level',          value: level,                     Icon: Star,        color: 'text-purple-500' },
+    { label: 'Streak',         value: `${streak}d`,              Icon: Flame,       color: 'text-orange-500' },
+    { label: 'Phases Done',    value: completedPhases.length,    Icon: Rocket,      color: 'text-cyan-500' },
   ];
 
   const handleSave = async () => {
+    if (!user?.uid) return;
     setSaving(true);
-    try {
-      await api.patch('/api/profile/me', { display_name: displayName, bio, country, rocket_name: rocketName });
-    } catch { /* offline — save locally */ }
+    await updateUserProfile(user.uid, {
+      username: editName,
+      bio: editBio,
+      avatar: editAvatar,
+    });
+    setProfile({ ...profile, username: editName, bio: editBio, avatar: editAvatar });
     setSaving(false);
     setEditing(false);
   };
 
+  if (!profile) return (
+    <div className="min-h-screen bg-[#050510] flex items-center justify-center">
+      <div className="text-zinc-600 animate-pulse font-black text-xs uppercase tracking-[0.4em]">Retrieving Credentials...</div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#050510] text-white pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#050510]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-black text-white">My Profile</h1>
-        <div className="ml-auto">
+      <div className="sticky top-0 z-50 bg-[#050510]/80 backdrop-blur-3xl border-b border-white/5 px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-2xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-black italic tracking-tighter uppercase">Profile</h1>
+        </div>
+        <div>
           {editing ? (
             <div className="flex gap-2">
-              <button onClick={() => setEditing(false)} className="p-2 rounded-xl hover:bg-white/5 text-zinc-400">
-                <X className="w-4 h-4" />
+              <button onClick={() => setEditing(false)} className="p-2 rounded-2xl hover:bg-white/5 text-zinc-500">
+                <X className="w-5 h-5" />
               </button>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl text-sm transition-all disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-3 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20">
                 <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Syncing' : 'Save Config'}
               </button>
             </div>
           ) : (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 font-medium rounded-xl text-sm transition-all">
+            <button onClick={() => setEditing(true)} className="flex items-center gap-3 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all">
               <Edit3 className="w-4 h-4" />
-              Edit
+              Edit Profile
             </button>
           )}
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-8 space-y-6">
-        {/* Avatar + Name */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-6">
-          {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            <div
-              className="w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-black text-white shadow-2xl"
-              style={{ background: `linear-gradient(135deg, ${avatarColor}, ${avatarColor}88)` }}
-            >
-              {(displayName[0] || 'C').toUpperCase()}
-            </div>
-            {editing && (
-              <div className="absolute -bottom-2 -right-2 flex gap-1 flex-wrap w-28">
-                {AVATAR_COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setAvatarColor(c)}
-                    className="w-5 h-5 rounded-full border-2 transition-all"
-                    style={{ backgroundColor: c, borderColor: avatarColor === c ? 'white' : 'transparent' }}
+      <div className="max-w-4xl mx-auto px-6 pt-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left Column: Avatar + Basic Info */}
+          <div className="space-y-6">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0a0a1a] border border-white/10 rounded-[32px] p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-blue-500/20 to-transparent" />
+              
+              <div className="relative mb-6">
+                <div className="w-32 h-32 rounded-[40px] bg-blue-500 flex items-center justify-center text-5xl font-black italic text-white shadow-2xl shadow-blue-500/20 border-4 border-white/10">
+                  {editName[0]?.toUpperCase() || 'C'}
+                </div>
+                {editing && (
+                   <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg border-4 border-[#0a0a1a] cursor-pointer">
+                      <Edit3 className="w-4 h-4" />
+                   </div>
+                )}
+              </div>
+
+              <div className="relative z-10 w-full">
+                {editing ? (
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white text-xl font-black italic text-center focus:outline-none focus:border-blue-500/50 mb-2"
                   />
-                ))}
+                ) : (
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">{profile.username}</h2>
+                )}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-black px-4 py-1.5 rounded-full bg-blue-500 text-white uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20">
+                    {levelTitle}
+                  </span>
+                  <span className="text-xs font-bold text-zinc-600 mt-2">Joined {new Date(profile.joinedAt?.seconds * 1000).toLocaleDateString()}</span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Name + title */}
-          <div className="flex-1 min-w-0">
-            {editing ? (
-              <input
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                maxLength={30}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xl font-black focus:outline-none focus:border-cyan-500/50 mb-2"
-              />
-            ) : (
-              <h2 className="text-2xl font-black text-white mb-1">{displayName}</h2>
-            )}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 font-bold">
-                {levelTitle}
-              </span>
-              <span className="text-xs text-zinc-500">@{user?.username}</span>
-            </div>
-
-            {/* Level progress */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-500">Lv.{level}</span>
-              <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${levelProgress}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                />
+              {/* Progress Bar */}
+              <div className="w-full mt-10">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Level Progress</span>
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{Math.round(levelProgress)}%</span>
+                </div>
+                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${levelProgress}%` }}
+                    transition={{ duration: 1 }}
+                  />
+                </div>
               </div>
-              <span className="text-xs text-zinc-500">Lv.{level + 1}</span>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
 
-        {/* Bio */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-white/[0.03] border border-white/5 rounded-2xl p-4"
-        >
-          <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <User className="w-3.5 h-3.5" /> About
-          </h3>
-          {editing ? (
-            <textarea
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-              maxLength={250}
-              rows={3}
-              placeholder="Tell the galaxy about yourself..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/50 resize-none placeholder-zinc-600"
-            />
-          ) : (
-            <p className="text-zinc-400 text-sm">{bio || 'No bio yet. Click Edit to add one.'}</p>
-          )}
-
-          <div className="mt-3 flex gap-4">
-            {editing ? (
-              <input
-                value={country}
-                onChange={e => setCountry(e.target.value)}
-                placeholder="Country"
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/50"
-              />
-            ) : country ? (
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <Globe className="w-3.5 h-3.5" /> {country}
-              </span>
-            ) : null}
-          </div>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <BarChart2 className="w-3.5 h-3.5" /> Stats
-          </h3>
-          <div className="grid grid-cols-4 gap-2">
-            {stats.map(({ label, value, Icon, color }) => (
-              <div key={label} className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 text-center">
-                <Icon className={`w-4 h-4 mx-auto mb-1 ${color}`} />
-                <div className="text-white font-black text-lg leading-none">{value}</div>
-                <div className="text-zinc-600 text-[10px] mt-1">{label}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Rocket Name */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-white/[0.03] border border-white/5 rounded-2xl p-4"
-        >
-          <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Rocket className="w-3.5 h-3.5" /> My Rocket
-          </h3>
-          {editing ? (
-            <input
-              value={rocketName}
-              onChange={e => setRocketName(e.target.value)}
-              maxLength={30}
-              placeholder="Name your rocket"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/50"
-            />
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div>
-                <div className="text-white font-bold">{rocketName}</div>
-                <div className="text-zinc-500 text-xs">{completedPhases.length}/12 parts unlocked</div>
-              </div>
-            </div>
-          )}
-
-          {/* Parts progress */}
-          <div className="mt-3 flex gap-1">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 h-1.5 rounded-full"
-                style={{
-                  backgroundColor: i < completedPhases.length ? '#6366f1' : 'rgba(255,255,255,0.05)'
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Achievements */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Trophy className="w-3.5 h-3.5" /> Achievements
-          </h3>
-          {completedPhases.length === 0 ? (
-            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 text-center">
-              <Shield className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-              <p className="text-zinc-500 text-sm">Complete phases to unlock achievements</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {completedPhases.map(phaseId => (
-                <div key={phaseId} className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 text-center">
-                  <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-1" />
-                  <div className="text-white text-xs font-bold">Phase {phaseId}</div>
-                  <div className="text-zinc-600 text-[10px]">Completed</div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              {stats.map(({ label, value, Icon, color }) => (
+                <div key={label} className="bg-[#0a0a1a] border border-white/10 rounded-3xl p-6 shadow-xl">
+                  <Icon className={`w-5 h-5 mb-3 ${color}`} />
+                  <div className="text-2xl font-black italic text-white">{value}</div>
+                  <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mt-1">{label}</div>
                 </div>
               ))}
             </div>
-          )}
-        </motion.div>
+          </div>
+
+          {/* Right Column: Bio + Content */}
+          <div className="md:col-span-2 space-y-6">
+            <Section title="Cognitive Archive (Bio)" Icon={User}>
+              {editing ? (
+                <textarea
+                  value={editBio}
+                  onChange={e => setEditBio(e.target.value)}
+                  rows={4}
+                  placeholder="Define your existence in the galaxy..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm font-medium focus:outline-none focus:border-blue-500/50 resize-none placeholder-zinc-700"
+                />
+              ) : (
+                <p className="text-zinc-400 text-lg leading-relaxed font-medium italic">
+                  "{profile.bio || 'This explorer has not yet defined their mission parameters.'}"
+                </p>
+              )}
+            </Section>
+
+            <Section title="Operational Milestones" Icon={Trophy}>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {completedPhases.length === 0 ? (
+                    <div className="col-span-full py-12 text-center bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+                       <Shield className="w-12 h-12 text-zinc-800 mx-auto mb-4 opacity-50" />
+                       <p className="text-zinc-600 font-bold uppercase tracking-widest text-xs">No phases synchronized yet</p>
+                    </div>
+                  ) : (
+                    completedPhases.map(phaseId => (
+                      <div key={phaseId} className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl group hover:border-blue-500/30 transition-all">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                          <CheckCircle className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="text-white font-black italic uppercase text-sm tracking-tight">Phase {phaseId} Synchronized</div>
+                          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">MISSION COMPLETE</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+               </div>
+            </Section>
+
+            <Section title="Galactic Presence" Icon={Globe}>
+              <div className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-3xl">
+                <div>
+                   <div className="text-white font-black italic uppercase text-lg mb-1">Global Visibility</div>
+                   <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Profile is visible to all explorers</div>
+                </div>
+                <div className="w-12 h-6 bg-blue-500 rounded-full relative">
+                   <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full shadow-lg" />
+                </div>
+              </div>
+            </Section>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Section({ title, Icon, children }: { title: string; Icon: React.FC<any>; children: React.ReactNode }) {
+  return (
+    <div className="bg-[#0a0a1a] border border-white/10 rounded-[32px] p-8 shadow-2xl">
+      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+        <Icon className="w-4 h-4 text-blue-500" /> {title}
+      </h3>
+      {children}
     </div>
   );
 }

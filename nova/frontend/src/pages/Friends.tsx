@@ -6,388 +6,201 @@ import {
   Activity, Check, X, Rocket, Zap, Flame,
   Star, Clock, UserCheck, UserX, Loader2,
 } from 'lucide-react';
-import api from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
+import {
+  getFriends, getFriendRequests, sendFriendRequest,
+  acceptFriendRequest, searchUsers, UserProfile
+} from '@/lib/firestoreService';
 
-type Tab = 'friends' | 'requests' | 'search' | 'leaderboard' | 'activity';
-
-interface Friend {
-  user_id: string; username: string; display_name: string;
-  avatar_url: string; title: string; level: number;
-  current_phase: number; streak_days: number; total_xp: number;
-  friendship_since?: string;
-}
-
-interface FriendRequest {
-  request_id: string; sender_id: string; sender_name: string;
-  sender_avatar: string; sender_level: number; sender_title: string; sent_at: string;
-}
-
-interface SearchResult {
-  user_id: string; username: string; display_name: string;
-  avatar_url: string; title: string; level: number;
-  current_phase: number; is_friend: boolean; request_pending: boolean;
-}
-
-interface LeaderboardEntry {
-  rank: number; user_id: string; display_name: string;
-  avatar_url: string; title: string; total_xp: number;
-  level: number; current_phase: number; streak_days: number; is_you: boolean;
-}
-
-interface ActivityItem {
-  id: string; user_id: string; display_name: string;
-  avatar_url: string; type: string; title: string;
-  description: string; xp_earned: number; phase?: number; created_at: string;
-}
-
-function Avatar({ name, url, size = 10 }: { name: string; url?: string; size?: number }) {
-  const colors = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
-  const color  = colors[(name.charCodeAt(0) || 0) % colors.length];
-  return (
-    <div
-      className={`w-${size} h-${size} rounded-2xl flex items-center justify-center text-white font-black flex-shrink-0`}
-      style={{ background: `linear-gradient(135deg, ${color}, ${color}88)`, fontSize: size * 1.6 }}
-    >
-      {(name[0] || '?').toUpperCase()}
-    </div>
-  );
-}
-
-function FriendCard({ friend, onRemove }: { friend: Friend; onRemove: (id: string) => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.05] transition-all"
-    >
-      <Avatar name={friend.display_name} size={10} />
-      <div className="flex-1 min-w-0">
-        <div className="text-white font-bold text-sm truncate">{friend.display_name}</div>
-        <div className="text-zinc-500 text-xs">{friend.title}</div>
-        <div className="flex items-center gap-3 mt-1">
-          <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-            <Star className="w-3 h-3 text-cyan-400" /> Lv.{friend.level}
-          </span>
-          <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-            <Rocket className="w-3 h-3 text-purple-400" /> Phase {friend.current_phase}
-          </span>
-          <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-            <Flame className="w-3 h-3 text-orange-400" /> {friend.streak_days}d
-          </span>
-        </div>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <div className="text-yellow-400 font-black text-sm">{friend.total_xp.toLocaleString()}</div>
-        <div className="text-zinc-600 text-[10px]">XP</div>
-        <button
-          onClick={() => onRemove(friend.user_id)}
-          className="mt-1 p-1 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-400 transition-all"
-        >
-          <UserX className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
+type Tab = 'friends' | 'requests' | 'search';
 
 export default function Friends() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [tab,          setTab]          = useState<Tab>('friends');
-  const [friends,      setFriends]      = useState<Friend[]>([]);
-  const [requests,     setRequests]     = useState<FriendRequest[]>([]);
+  const [friends,      setFriends]      = useState<any[]>([]);
+  const [requests,     setRequests]     = useState<any[]>([]);
   const [searchQuery,  setSearchQuery]  = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [leaderboard,  setLeaderboard]  = useState<LeaderboardEntry[]>([]);
-  const [activity,     setActivity]     = useState<ActivityItem[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(false);
 
-  useEffect(() => { loadFriends(); loadRequests(); }, []);
-  useEffect(() => { if (tab === 'leaderboard') loadLeaderboard(); }, [tab]);
-  useEffect(() => { if (tab === 'activity') loadActivity(); }, [tab]);
+  useEffect(() => {
+    if (user?.uid) {
+      loadFriends();
+      loadRequests();
+    }
+  }, [user]);
 
   const loadFriends = async () => {
-    try { const r = await api.get('/api/friends/'); setFriends(r.data); } catch {}
+    if (!user?.uid) return;
+    const f = await getFriends(user.uid);
+    setFriends(f);
   };
+
   const loadRequests = async () => {
-    try { const r = await api.get('/api/friends/requests'); setRequests(r.data); } catch {}
-  };
-  const loadLeaderboard = async () => {
-    try { const r = await api.get('/api/friends/leaderboard/friends'); setLeaderboard(r.data); } catch {}
-  };
-  const loadActivity = async () => {
-    try { const r = await api.get('/api/friends/activity/feed'); setActivity(r.data); } catch {}
+    if (!user?.uid) return;
+    const r = await getFriendRequests(user.uid);
+    setRequests(r);
   };
 
   const handleSearch = async (q: string) => {
     setSearchQuery(q);
     if (q.length < 2) { setSearchResults([]); return; }
-    try {
-      const r = await api.get(`/api/friends/search/${q}`);
-      setSearchResults(r.data);
-    } catch {}
+    setLoading(true);
+    const results = await searchUsers(q);
+    setSearchResults(results.filter(u => u.uid !== user?.uid));
+    setLoading(false);
   };
 
-  const sendRequest = async (userId: string) => {
-    try {
-      await api.post('/api/friends/request', { receiver_id: userId });
-      setSearchResults(prev => prev.map(u => u.user_id === userId ? { ...u, request_pending: true } : u));
-    } catch {}
+  const handleSendRequest = async (toUid: string) => {
+    if (!user?.uid) return;
+    await sendFriendRequest(user.uid, toUid);
+    setSearchResults(prev => prev.map(u => u.uid === toUid ? { ...u, pending: true } : u));
   };
 
-  const acceptRequest = async (requestId: string) => {
-    try {
-      await api.post(`/api/friends/accept/${requestId}`);
-      setRequests(prev => prev.filter(r => r.request_id !== requestId));
-      loadFriends();
-    } catch {}
+  const handleAccept = async (req: any) => {
+    if (!user?.uid) return;
+    await acceptFriendRequest(req.id, user.uid, req.from);
+    loadRequests();
+    loadFriends();
   };
 
-  const declineRequest = async (requestId: string) => {
-    try {
-      await api.post(`/api/friends/decline/${requestId}`);
-      setRequests(prev => prev.filter(r => r.request_id !== requestId));
-    } catch {}
-  };
-
-  const removeFriend = async (friendId: string) => {
-    try {
-      await api.delete(`/api/friends/${friendId}`);
-      setFriends(prev => prev.filter(f => f.user_id !== friendId));
-    } catch {}
-  };
-
-  const TABS: { id: Tab; label: string; Icon: React.FC<any>; badge?: number }[] = [
-    { id: 'friends',     label: 'Friends',     Icon: Users,   badge: friends.length  },
-    { id: 'requests',    label: 'Requests',    Icon: UserPlus, badge: requests.length },
-    { id: 'search',      label: 'Search',      Icon: Search   },
-    { id: 'leaderboard', label: 'Leaderboard', Icon: Trophy   },
-    { id: 'activity',    label: 'Activity',    Icon: Activity },
+  const TABS = [
+    { id: 'friends',  label: 'Squad',     Icon: Users,   badge: friends.length  },
+    { id: 'requests', label: 'Signals',    Icon: UserPlus, badge: requests.length },
+    { id: 'search',   label: 'Explore',    Icon: Search   },
   ];
 
   return (
     <div className="min-h-screen bg-[#050510] text-white pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#050510]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-black text-white">Friends</h1>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 px-4 py-3 overflow-x-auto scrollbar-hide border-b border-white/5">
-        {TABS.map(({ id, label, Icon, badge }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-              tab === id
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-            {badge !== undefined && badge > 0 && (
-              <span className="w-4 h-4 rounded-full bg-cyan-500 text-black text-[9px] font-black flex items-center justify-center">
-                {badge}
-              </span>
-            )}
+      <div className="sticky top-0 z-50 bg-[#050510]/80 backdrop-blur-3xl border-b border-white/5 px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-2xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all">
+            <ChevronLeft className="w-5 h-5" />
           </button>
-        ))}
+          <h1 className="text-2xl font-black italic tracking-tighter uppercase">Squadron</h1>
+        </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 space-y-3">
+      <div className="max-w-4xl mx-auto px-6 pt-10">
+        {/* Tab bar */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-12 pb-4 border-b border-white/5">
+          {TABS.map(({ id, label, Icon, badge }) => (
+            <button key={id} onClick={() => setTab(id as Tab)}
+              className={`flex-shrink-0 flex items-center gap-3 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                tab === id ? 'bg-blue-500 text-white shadow-xl shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+              }`}>
+              <Icon className="w-4 h-4" />
+              {label}
+              {badge > 0 && <span className="ml-2 px-2 py-0.5 rounded-full bg-white text-black text-[9px] font-black">{badge}</span>}
+            </button>
+          ))}
+        </div>
 
-        {/* Friends Tab */}
-        {tab === 'friends' && (
-          <AnimatePresence>
-            {friends.length === 0 ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
-                <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-400 font-medium">No friends yet</p>
-                <p className="text-zinc-600 text-sm mt-1">Search for cadets to add</p>
-                <button onClick={() => setTab('search')} className="mt-4 px-4 py-2 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-xl text-sm font-medium">
-                  Find Friends
-                </button>
-              </motion.div>
-            ) : (
-              friends.map(f => <FriendCard key={f.user_id} friend={f} onRemove={removeFriend} />)
-            )}
-          </AnimatePresence>
-        )}
-
-        {/* Requests Tab */}
-        {tab === 'requests' && (
-          <div className="space-y-3">
-            {requests.length === 0 ? (
-              <div className="text-center py-16">
-                <UserPlus className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-400 font-medium">No pending requests</p>
-              </div>
-            ) : (
-              requests.map(r => (
-                <motion.div key={r.request_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-2xl"
-                >
-                  <Avatar name={r.sender_name} size={10} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold text-sm">{r.sender_name}</div>
-                    <div className="text-zinc-500 text-xs">{r.sender_title} · Lv.{r.sender_level}</div>
+        <div className="grid grid-cols-1 gap-4">
+          {tab === 'friends' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {friends.length === 0 ? (
+                  <div className="col-span-full py-20 text-center">
+                    <Users className="w-12 h-12 text-zinc-800 mx-auto mb-4 opacity-50" />
+                    <p className="text-zinc-600 font-black uppercase tracking-widest text-xs">No squad members detected</p>
+                    <button onClick={() => setTab('search')} className="mt-6 px-6 py-3 bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl">Search Galaxy</button>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => acceptRequest(r.request_id)}
-                      className="p-2 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-all">
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => declineRequest(r.request_id)}
-                      className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Search Tab */}
-        {tab === 'search' && (
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                value={searchQuery}
-                onChange={e => handleSearch(e.target.value)}
-                placeholder="Search by username..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50"
-              />
-            </div>
-
-            {searchResults.map(u => (
-              <motion.div key={u.user_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-2xl"
-              >
-                <Avatar name={u.display_name} size={10} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-white font-bold text-sm">{u.display_name}</div>
-                  <div className="text-zinc-500 text-xs">{u.title} · Phase {u.current_phase}</div>
-                </div>
-                {u.is_friend ? (
-                  <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-lg">
-                    <UserCheck className="w-3.5 h-3.5" /> Friends
-                  </span>
-                ) : u.request_pending ? (
-                  <span className="text-xs text-zinc-500 bg-white/5 px-2 py-1 rounded-lg">Pending</span>
                 ) : (
-                  <button onClick={() => sendRequest(u.user_id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-medium hover:bg-cyan-500/30 transition-all"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" /> Add
-                  </button>
+                  friends.map(f => <FriendCard key={f.uid} friend={f} />)
                 )}
-              </motion.div>
-            ))}
+             </div>
+          )}
 
-            {searchQuery.length >= 2 && searchResults.length === 0 && (
-              <div className="text-center py-8 text-zinc-500 text-sm">No cadets found for "{searchQuery}"</div>
-            )}
-          </div>
-        )}
-
-        {/* Leaderboard Tab */}
-        {tab === 'leaderboard' && (
-          <div className="space-y-2">
-            {leaderboard.length === 0 ? (
-              <div className="text-center py-16">
-                <Trophy className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-400 font-medium">Add friends to see the leaderboard</p>
-              </div>
-            ) : (
-              leaderboard.map((e, i) => (
-                <motion.div key={e.user_id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
-                  className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
-                    e.is_you
-                      ? 'bg-cyan-500/10 border-cyan-500/20'
-                      : 'bg-white/[0.03] border-white/5'
-                  }`}
-                >
-                  {/* Rank */}
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${
-                    e.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                    e.rank === 2 ? 'bg-zinc-400/20 text-zinc-300' :
-                    e.rank === 3 ? 'bg-orange-500/20 text-orange-400' :
-                    'bg-white/5 text-zinc-500'
-                  }`}>
-                    {e.rank}
+          {tab === 'requests' && (
+             <div className="space-y-4">
+                {requests.length === 0 ? (
+                   <div className="py-20 text-center">
+                    <UserPlus className="w-12 h-12 text-zinc-800 mx-auto mb-4 opacity-50" />
+                    <p className="text-zinc-600 font-black uppercase tracking-widest text-xs">No incoming signals</p>
                   </div>
-
-                  <Avatar name={e.display_name} size={9} />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-bold text-sm truncate">{e.display_name}</span>
-                      {e.is_you && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold">YOU</span>}
+                ) : (
+                  requests.map(r => (
+                    <div key={r.id} className="bg-[#0a0a1a] border border-white/10 rounded-3xl p-6 flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-500 flex items-center justify-center text-xl font-black italic">
+                             ?
+                          </div>
+                          <div>
+                             <div className="text-white font-black italic uppercase">New Signal Received</div>
+                             <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">ID: {r.from.slice(0, 8)}...</div>
+                          </div>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => handleAccept(r)} className="p-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20">
+                             <Check className="w-5 h-5" />
+                          </button>
+                          <button className="p-3 rounded-xl bg-white/5 text-zinc-500 hover:bg-white/10 transition-all">
+                             <X className="w-5 h-5" />
+                          </button>
+                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-zinc-600">Lv.{e.level}</span>
-                      <span className="text-[10px] text-zinc-600">Phase {e.current_phase}</span>
-                      <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
-                        <Flame className="w-2.5 h-2.5 text-orange-400" />{e.streak_days}d
-                      </span>
-                    </div>
-                  </div>
+                  ))
+                )}
+             </div>
+          )}
 
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-yellow-400 font-black">{e.total_xp.toLocaleString()}</div>
-                    <div className="text-zinc-600 text-[10px]">XP</div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
+          {tab === 'search' && (
+            <div className="space-y-6">
+               <div className="relative">
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                  <input
+                    value={searchQuery}
+                    onChange={e => handleSearch(e.target.value)}
+                    placeholder="SCANNING GALAXY FOR EXPLORERS..."
+                    className="w-full bg-[#0a0a1a] border border-white/10 rounded-3xl pl-16 pr-6 py-5 text-white text-sm font-black italic placeholder:text-zinc-800 focus:outline-none focus:border-blue-500/50 shadow-2xl"
+                  />
+               </div>
 
-        {/* Activity Tab */}
-        {tab === 'activity' && (
-          <div className="space-y-3">
-            {activity.length === 0 ? (
-              <div className="text-center py-16">
-                <Activity className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-400 font-medium">No activity yet</p>
-                <p className="text-zinc-600 text-sm mt-1">Add friends to see their learning activity</p>
-              </div>
-            ) : (
-              activity.map((a, i) => (
-                <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                  className="flex items-start gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-2xl"
-                >
-                  <Avatar name={a.display_name} size={9} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-sm">
-                      <span className="font-bold">{a.display_name}</span>
-                      <span className="text-zinc-400"> {a.title}</span>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {searchResults.map(u => (
+                    <div key={u.uid} className="bg-[#0a0a1a] border border-white/10 rounded-3xl p-6 flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                       <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-[20px] bg-zinc-900 border border-white/10 flex items-center justify-center text-xl font-black italic text-white group-hover:bg-blue-500 transition-all">
+                             {u.displayName[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                             <div className="text-white font-black italic uppercase tracking-tight">{u.displayName}</div>
+                             <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Space Cadet</div>
+                          </div>
+                       </div>
+                       {u.pending ? (
+                         <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-4 py-2 bg-white/5 rounded-xl">Signal Sent</span>
+                       ) : (
+                        <button onClick={() => handleSendRequest(u.uid)} className="p-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100">
+                          <UserPlus className="w-5 h-5" />
+                        </button>
+                       )}
                     </div>
-                    {a.description && <div className="text-zinc-500 text-xs mt-0.5">{a.description}</div>}
-                    <div className="flex items-center gap-3 mt-1">
-                      {a.xp_earned > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-yellow-400">
-                          <Zap className="w-3 h-3" /> +{a.xp_earned} XP
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-                        <Clock className="w-3 h-3" />
-                        {new Date(a.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
-
+                  ))}
+               </div>
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function FriendCard({ friend }: { friend: any }) {
+  return (
+    <div className="bg-[#0a0a1a] border border-white/10 rounded-[32px] p-6 flex items-center gap-4 group hover:border-blue-500/30 transition-all shadow-xl">
+       <div className="w-16 h-16 rounded-[24px] bg-blue-500 flex items-center justify-center text-2xl font-black italic text-white shadow-lg shadow-blue-500/20">
+          ?
+       </div>
+       <div className="flex-1">
+          <div className="text-white font-black italic uppercase text-lg tracking-tight">Active Explorer</div>
+          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1">SQUAD MEMBER</div>
+       </div>
+       <div className="text-right">
+          <div className="text-blue-500 font-black italic uppercase text-xs">ONLINE</div>
+       </div>
     </div>
   );
 }
