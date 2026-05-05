@@ -35,10 +35,7 @@ export default function Header() {
       >
         {/* Logo */}
         <div onClick={() => navigate('/universe')} className="flex items-center gap-2 cursor-pointer group">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Rocket className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-base font-black italic tracking-tighter text-white">NOVA</span>
+          <img src="/logo.png" alt="NOVA Logo" className="h-8 w-auto group-hover:scale-105 transition-transform" />
         </div>
 
         <div className="w-px h-5 bg-white/10" />

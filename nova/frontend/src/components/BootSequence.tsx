@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface BootSequenceProps {
@@ -52,17 +52,17 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            <h1
-              className="text-7xl md:text-8xl font-black tracking-wider"
-              style={{ color: "#1e3a8a", textShadow: "0 0 30px rgba(30,58,138,0.4)" }}
-            >
-              NOVA
-            </h1>
+            <img
+              src="/logo.png"
+              alt="NOVA"
+              className="w-72 md:w-96 h-auto"
+              style={{ filter: "drop-shadow(0 0 30px rgba(30, 58, 138, 0.55))" }}
+            />
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: "120px" }}
               transition={{ delay: 0.4, duration: 0.5 }}
-              className="h-px mt-4 mb-6"
+              className="h-px mt-6 mb-4"
               style={{ backgroundColor: "#1e40af" }}
             />
             <motion.p

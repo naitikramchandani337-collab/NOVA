@@ -1,0 +1,21 @@
+{
+  "name": "NOVA — AI Learning Platform",
+  "short_name": "NOVA",
+  "description": "Master AI from scratch. Build your rocket. Launch into deep space.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

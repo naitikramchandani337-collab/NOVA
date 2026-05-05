@@ -291,10 +291,22 @@ export default function Landing() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
               <span className="text-xs text-teal-400 tracking-[0.3em] uppercase font-medium">◑ Mission Control Online</span>
             </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8 }} className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-none mb-6">
-              <span className="block">NOVA</span>
-              <span className="block text-2xl md:text-3xl lg:text-4xl font-medium text-gray-400 mt-3">Master AI. Build Your Rocket. Launch.</span>
-            </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex flex-col items-center mb-6"
+            >
+              <img
+                src="/logo.png"
+                alt="NOVA"
+                className="w-80 md:w-[420px] lg:w-[500px] h-auto"
+                style={{ filter: "drop-shadow(0 0 40px rgba(30, 58, 138, 0.45))" }}
+              />
+              <span className="block text-2xl md:text-3xl lg:text-4xl font-medium text-gray-400 mt-4">
+                Master AI. Build Your Rocket. Launch.
+              </span>
+            </motion.div>
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
               A gamified space-themed platform that teaches Artificial Intelligence from scratch to mastery across 12 immersive phases.
             </motion.p>
@@ -338,8 +350,8 @@ export default function Landing() {
 
         <section className="relative z-20 border-t border-gray-800/60 py-8 px-6">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-teal-400 text-sm font-black">NOVA</span>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="NOVA" className="h-7 w-auto opacity-80" />
               <span className="text-gray-700 text-xs">━━</span>
               <span className="text-gray-600 text-xs">AI Learning Platform</span>
             </div>
