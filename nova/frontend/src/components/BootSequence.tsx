@@ -55,8 +55,11 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
             <img
               src="/logo.png"
               alt="NOVA"
-              className="w-72 md:w-96 h-auto"
-              style={{ filter: "drop-shadow(0 0 30px rgba(30, 58, 138, 0.55))" }}
+              className="w-48 md:w-64 h-auto"
+              style={{ 
+                filter: "drop-shadow(0 0 20px rgba(30, 58, 138, 0.5))",
+                mixBlendMode: "screen"
+              }}
             />
             <motion.div
               initial={{ width: 0 }}
