@@ -287,32 +287,123 @@ export default function Landing() {
 
         {/* HERO */}
         <section className="relative z-20 min-h-screen flex flex-col items-center justify-center px-6">
-          <motion.div animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : -40 }} transition={{ duration: 0.4 }} className="text-center max-w-3xl">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
-              <span className="text-xs text-teal-400 tracking-[0.3em] uppercase font-medium">◑ Mission Control Online</span>
+          <motion.div animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : -40 }} transition={{ duration: 0.4 }} className="text-center max-w-4xl">
+            {/* Status Badge */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.3 }} 
+              className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/30 bg-teal-500/5 backdrop-blur-sm"
+            >
+              <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
+              <span className="text-xs text-teal-400 tracking-[0.3em] uppercase font-medium">Mission Control Online</span>
             </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8 }} className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-none mb-6">
-              <span className="block">NOVA</span>
-              <span className="block text-2xl md:text-3xl lg:text-4xl font-medium text-gray-400 mt-3">Master AI. Build Your Rocket. Launch.</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
-              A gamified space-themed platform that teaches Artificial Intelligence from scratch to mastery across 12 immersive phases.
+
+            {/* Main Title */}
+            <motion.div 
+              initial={{ opacity: 0, y: 30, scale: 0.95 }} 
+              animate={{ opacity: 1, y: 0, scale: 1 }} 
+              transition={{ delay: 0.5, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} 
+              className="mb-8"
+            >
+              <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-none" 
+                  style={{ 
+                    background: 'linear-gradient(to bottom, #ffffff 30%, #3b82f6 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: '0 0 80px rgba(59,130,246,0.3)'
+                  }}>
+                NOVA
+              </h1>
+              <div className="relative inline-block">
+                <span className="block text-2xl md:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-300 via-gray-100 to-gray-300">
+                  Master AI. Build Your Rocket. Launch.
+                </span>
+                <div className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+              </div>
+            </motion.div>
+
+            {/* Description */}
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.8 }} 
+              className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
+            >
+              A gamified space-themed platform that teaches <span className="text-blue-400 font-semibold">Artificial Intelligence</span> from scratch to mastery across <span className="text-teal-400 font-semibold">12 immersive phases</span>.
             </motion.p>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1 }} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/register')}
-                className="px-8 py-3.5 rounded-2xl font-bold text-base text-white"
-                style={{ background: 'linear-gradient(135deg,#1e3a8a,#2563eb)', boxShadow: '0 0 30px rgba(37,99,235,0.4)' }}>
-                ● Start Mission
+
+            {/* CTA Buttons */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 1.1 }} 
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
+            >
+              <motion.button 
+                whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(37,99,235,0.6)' }} 
+                whileTap={{ scale: 0.95 }} 
+                onClick={() => navigate('/register')}
+                className="group relative px-10 py-4 rounded-2xl font-bold text-lg text-white overflow-hidden"
+                style={{ background: 'linear-gradient(135deg,#1e3a8a,#2563eb,#3b82f6)' }}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 bg-white rounded-full" />
+                  Start Mission
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </motion.button>
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/login')}
-                className="px-8 py-3.5 rounded-2xl font-bold text-base text-gray-300 bg-gray-900/80 border border-gray-700 hover:border-gray-500 transition-all">
-                ◑ Sign In
+              
+              <motion.button 
+                whileHover={{ scale: 1.05, borderColor: 'rgba(156,163,175,0.5)' }} 
+                whileTap={{ scale: 0.95 }} 
+                onClick={() => navigate('/login')}
+                className="px-10 py-4 rounded-2xl font-bold text-lg text-gray-300 bg-gray-900/60 border-2 border-gray-700/50 hover:bg-gray-800/60 backdrop-blur-sm transition-all"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <span className="text-gray-500">◑</span>
+                  Sign In
+                </span>
               </motion.button>
             </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-16">
-              <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="flex flex-col items-center gap-2">
+
+            {/* Stats Bar */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.4 }}
+              className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500 mb-16"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-green-400">✓</span>
+                <span>Free to join</span>
+              </div>
+              <div className="w-px h-4 bg-gray-700" />
+              <div className="flex items-center gap-2">
+                <span className="text-green-400">✓</span>
+                <span>No credit card</span>
+              </div>
+              <div className="w-px h-4 bg-gray-700" />
+              <div className="flex items-center gap-2">
+                <span className="text-blue-400">●</span>
+                <span>12 AI phases</span>
+              </div>
+            </motion.div>
+
+            {/* Scroll Indicator */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 2 }} 
+              className="mt-8"
+            >
+              <motion.div 
+                animate={{ y: [0, 8, 0] }} 
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
+                className="flex flex-col items-center gap-2"
+              >
                 <span className="text-xs text-gray-600 tracking-widest uppercase">Scroll to explore</span>
-                <div className="w-px h-8 bg-gradient-to-b from-gray-600 to-transparent" />
+                <div className="w-px h-10 bg-gradient-to-b from-blue-500/50 via-teal-500/30 to-transparent" />
               </motion.div>
             </motion.div>
           </motion.div>
@@ -339,9 +430,7 @@ export default function Landing() {
         <section className="relative z-20 border-t border-gray-800/60 py-8 px-6">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="NOVA" className="h-7 w-auto opacity-80" />
-              <span className="text-gray-700 text-xs">━━</span>
-              <span className="text-gray-600 text-xs">AI Learning Platform</span>
+              <img src="/logo.png" alt="NOVA" className="h-6 w-auto" />
             </div>
             <div className="text-gray-700 text-xs">Built for commanders who want to master artificial intelligence</div>
           </div>

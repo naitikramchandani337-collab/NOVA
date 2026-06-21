@@ -83,7 +83,7 @@ export default function Login() {
         <div className="bg-[#0a0a1a]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="text-3xl font-black text-white mb-1">NOVA</div>
+            <img src="/logo.png" alt="NOVA Logo" className="h-16 w-auto mx-auto mb-3" />
             <div className="text-gray-500 text-sm">Sign in to continue your mission</div>
           </div>
 

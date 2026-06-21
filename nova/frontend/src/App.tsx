@@ -21,6 +21,7 @@ import Phase12Page from '@/pages/Phase12Page';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { AstraProvider, useAstra } from '@/components/Astra/AstraContext';
 import AstraAvatar from '@/components/Astra/AstraAvatar';
+import { ProgressProvider } from '@/context/progressContext';
 
 function AstraContextManagerInner() {
   const location = useLocation();
@@ -105,9 +106,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <FirebaseAuthProvider>
-        <AstraProvider>
-          <AppInner />
-        </AstraProvider>
+        <ProgressProvider>
+          <AstraProvider>
+            <AppInner />
+          </AstraProvider>
+        </ProgressProvider>
       </FirebaseAuthProvider>
     </BrowserRouter>
   );

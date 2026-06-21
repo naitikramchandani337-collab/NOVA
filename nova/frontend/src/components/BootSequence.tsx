@@ -54,29 +54,10 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
           >
             <img
               src="/logo.png"
-              alt="NOVA"
-              className="w-48 md:w-64 h-auto"
-              style={{ 
-                filter: "drop-shadow(0 0 20px rgba(30, 58, 138, 0.5))",
-                mixBlendMode: "screen"
-              }}
+              alt="NOVA — AI Learning Platform"
+              className="w-72 md:w-96 h-auto"
+              style={{ filter: "drop-shadow(0 0 30px rgba(30,58,138,0.4))" }}
             />
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: "120px" }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="h-px mt-6 mb-4"
-              style={{ backgroundColor: "#1e40af" }}
-            />
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-sm tracking-[0.25em] uppercase"
-              style={{ color: "#1e40af" }}
-            >
-              AI Learning Platform
-            </motion.p>
           </motion.div>
 
           <motion.div
