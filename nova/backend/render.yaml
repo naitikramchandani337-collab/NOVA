@@ -10,5 +10,17 @@ services:
         value: sqlite:///./nova.db
       - key: SECRET_KEY
         generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: CORS_ORIGINS
+        value: '["https://YOUR_FRONTEND_DOMAIN.vercel.app","http://localhost:5173","http://127.0.0.1:5173"]'
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-3.5-turbo
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama3-70b-8192

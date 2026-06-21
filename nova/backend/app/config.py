@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import List
 
 
@@ -25,6 +26,9 @@ class Settings(BaseSettings):
 
     # AI
     openrouter_api_key: str = ""
+    openrouter_model: str = "openai/gpt-3.5-turbo"
+    groq_api_key: str = ""
+    groq_model: str = "llama3-70b-8192"
 
     # Environment
     environment: str = "development"
@@ -34,9 +38,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 settings = Settings()

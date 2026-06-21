@@ -1,14 +1,37 @@
 import httpx
 import json
-import os
 from typing import AsyncGenerator
 from app.schemas import AstraRequest, AstraResponse
 from app.config import settings
 
-# Read from settings (which loads .env) — not raw os.getenv
-OPENROUTER_API_KEY = settings.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
-BASE_URL           = "https://openrouter.ai/api/v1"
+PROVIDERS = {
+    "openrouter": {
+        "api_key": settings.openrouter_api_key,
+        "model": settings.openrouter_model,
+        "base_url": "https://openrouter.ai/api/v1",
+        "headers": {
+            "HTTP-Referer": "https://nova-ai-platform.com",
+            "X-Title": "NOVA AI Learning Platform",
+        },
+        "name": "OpenRouter",
+    },
+    "groq": {
+        "api_key": settings.groq_api_key,
+        "model": settings.groq_model,
+        "base_url": "https://api.groq.com/openai/v1",
+        "headers": {},
+        "name": "Groq",
+    },
+}
+
+
+def get_ai_provider() -> dict:
+    """Prefer OpenRouter, then fall back to Groq for older local .env files."""
+    if settings.openrouter_api_key:
+        return PROVIDERS["openrouter"]
+    if settings.groq_api_key:
+        return PROVIDERS["groq"]
+    return PROVIDERS["openrouter"]
 
 PHASE_TOPICS = {
     1:  "Python Programming Fundamentals",
@@ -189,11 +212,12 @@ async def get_astra_response(req: AstraRequest) -> AstraResponse:
             xp_reward=0,
         )
 
-    if not OPENROUTER_API_KEY:
+    provider = get_ai_provider()
+    if not provider["api_key"]:
         return AstraResponse(
             message=(
                 "ASTRA needs an API key to operate, Commander. "
-                "Add OPENROUTER_API_KEY to your backend .env file 🛰️"
+                "Add OPENROUTER_API_KEY or GROQ_API_KEY to your backend .env file."
             ),
             mode=req.mode or "explain",
             emotion="alert",
@@ -212,15 +236,14 @@ async def get_astra_response(req: AstraRequest) -> AstraResponse:
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{BASE_URL}/chat/completions",
+                f"{provider['base_url']}/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Authorization": f"Bearer {provider['api_key']}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://nova-ai-platform.com",
-                    "X-Title": "NOVA AI Learning Platform",
+                    **provider["headers"],
                 },
                 json={
-                    "model": OPENROUTER_MODEL,
+                    "model": provider["model"],
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         *messages,
@@ -231,7 +254,32 @@ async def get_astra_response(req: AstraRequest) -> AstraResponse:
             )
             response.raise_for_status()
             data = response.json()
-            text = data["choices"][0]["message"]["content"]
+            provider_error = data.get("error") if isinstance(data, dict) else None
+            if provider_error:
+                detail = (
+                    provider_error.get("message")
+                    if isinstance(provider_error, dict)
+                    else str(provider_error)
+                )
+                return AstraResponse(
+                    message=f"{provider['name']} rejected the request: {detail}",
+                    mode=req.mode or "explain",
+                    emotion="error",
+                    xp_reward=0,
+                )
+
+            try:
+                text = data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, TypeError):
+                return AstraResponse(
+                    message=(
+                        f"{provider['name']} returned an unexpected response. "
+                        "Try again in a moment, or switch the backend to a different model."
+                    ),
+                    mode=req.mode or "explain",
+                    emotion="error",
+                    xp_reward=0,
+                )
 
             return AstraResponse(
                 message=text,
@@ -243,14 +291,22 @@ async def get_astra_response(req: AstraRequest) -> AstraResponse:
     except httpx.HTTPStatusError as e:
         code = e.response.status_code
         if code == 401:
-            msg = "API key invalid, Commander. Check OPENROUTER_API_KEY in .env 🛰️"
+            msg = f"{provider['name']} API key invalid, Commander. Check your backend .env file."
         elif code == 429:
             msg = "Too many requests. Recalibrating systems... try again in a moment 🛰️"
         else:
-            msg = f"OpenRouter error {code}. Adjusting course, Commander 🛰️"
+            msg = f"{provider['name']} error {code}. Adjusting course, Commander 🛰️"
         return AstraResponse(message=msg, mode=req.mode or "explain", emotion="error", xp_reward=0)
 
-    except Exception:
+    except httpx.RequestError:
+        return AstraResponse(
+            message=f"ASTRA could not reach {provider['name']}. Check your internet connection and provider status.",
+            mode=req.mode or "explain",
+            emotion="error",
+            xp_reward=0,
+        )
+
+    except Exception as e:
         return AstraResponse(
             message="Unknown anomaly detected, Commander. Please try again 🚀",
             mode=req.mode or "explain",
@@ -266,8 +322,9 @@ async def stream_astra_response(req: AstraRequest) -> AsyncGenerator[str, None]:
         yield "I can guide your trajectory, Commander, but the mission belongs to you 🚀"
         return
 
-    if not OPENROUTER_API_KEY:
-        yield "ASTRA needs an API key. Add OPENROUTER_API_KEY to your .env file 🛰️"
+    provider = get_ai_provider()
+    if not provider["api_key"]:
+        yield "ASTRA needs an API key. Add OPENROUTER_API_KEY or GROQ_API_KEY to your .env file."
         return
 
     system_prompt = build_system_prompt(req)
@@ -283,15 +340,14 @@ async def stream_astra_response(req: AstraRequest) -> AsyncGenerator[str, None]:
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream(
                 "POST",
-                f"{BASE_URL}/chat/completions",
+                f"{provider['base_url']}/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Authorization": f"Bearer {provider['api_key']}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://nova-ai-platform.com",
-                    "X-Title": "NOVA AI Learning Platform",
+                    **provider["headers"],
                 },
                 json={
-                    "model": OPENROUTER_MODEL,
+                    "model": provider["model"],
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         *messages,
